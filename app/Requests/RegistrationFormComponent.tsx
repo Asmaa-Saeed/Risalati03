@@ -27,14 +27,15 @@ interface Filters {
   msarId: number | null;
 }
 
-interface Props {
-  filters: Filters;
-}
-
-export default function RegistrationFormsComponent({ filters }: Props) {
+export default function RegistrationFormsComponent() {
   const params = useSearchParams();
   const deptParam = params.get("departmentId");
   const departmentId = deptParam ? Number(deptParam) : null;
+
+  const filters: Filters = {
+    degreeId: params.get("degreeId") ? Number(params.get("degreeId")) : null,
+    msarId: params.get("msarId") ? Number(params.get("msarId")) : null,
+  };
 
   const [forms, setForms] = useState<RegistrationForm[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,22 +50,28 @@ export default function RegistrationFormsComponent({ filters }: Props) {
   const getHeaders = () => {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    return {
-      Accept: "application/json",
+
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
     };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
   };
 
-  // 🔹 جلب استمارات القيد مع فلترة degreeId و msarId
+  // 🔹 تحميل استمارات القيد
   const fetchForms = useCallback(async () => {
+    if (typeof window === "undefined") return; // SSR protection
     setLoading(true);
     try {
       const queryParams: string[] = [];
 
       if (departmentId) queryParams.push(`deptId=${departmentId}`);
-      if (filters?.degreeId) queryParams.push(`degreeId=${filters.degreeId}`);
-      if (filters?.msarId) queryParams.push(`msarId=${filters.msarId}`);
+      if (filters.degreeId) queryParams.push(`degreeId=${filters.degreeId}`);
+      if (filters.msarId) queryParams.push(`msarId=${filters.msarId}`);
       if (searchTerm)
         queryParams.push(`search=${encodeURIComponent(searchTerm)}`);
 
@@ -97,7 +104,7 @@ export default function RegistrationFormsComponent({ filters }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [departmentId, filters?.degreeId, filters?.msarId, searchTerm]);
+  }, [departmentId, filters.degreeId, filters.msarId, searchTerm]);
 
   useEffect(() => {
     fetchForms();
@@ -128,7 +135,8 @@ export default function RegistrationFormsComponent({ filters }: Props) {
       } else {
         alert("❌ فشل الحذف");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("حدث خطأ أثناء الحذف");
     }
   };
@@ -149,7 +157,8 @@ export default function RegistrationFormsComponent({ filters }: Props) {
       } else {
         alert("فشل إنشاء ملف PDF");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("حدث خطأ أثناء الطباعة");
     }
   };
@@ -186,7 +195,7 @@ export default function RegistrationFormsComponent({ filters }: Props) {
           {error ? (
             <p className="p-4 text-red-600">{error}</p>
           ) : loading ? (
-            <p className="p-4">جارٍ تحميل البيانات...</p>
+            <p className="p-4">⏳ جاري التحميل...</p>
           ) : filteredForms.length > 0 ? (
             filteredForms.map((form) => (
               <div
@@ -228,6 +237,7 @@ export default function RegistrationFormsComponent({ filters }: Props) {
         </div>
       </div>
 
+      {/* ✅ مودال التفاصيل */}
       {selectedForm && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 px-2">
           <div className="bg-white rounded-xl w-full max-w-3xl shadow-xl relative overflow-hidden">
@@ -273,6 +283,7 @@ export default function RegistrationFormsComponent({ filters }: Props) {
         </div>
       )}
 
+      {/* ✅ مودال PDF */}
       {showPdfModal && pdfUrl && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
           <div className="bg-white w-11/12 h-5/6 rounded-xl shadow-xl relative">

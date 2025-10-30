@@ -3,15 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface Filters {
   degreeId: number | null;
   msarId: number | null;
-}
-
-interface Props {
-  filters: Filters;
 }
 
 interface Degree {
@@ -25,9 +21,14 @@ interface Msar {
   degreeId: number;
 }
 
-export default function AdmissionRequestsComponent({ filters }: Props) {
+export default function AdmissionRequestsComponent() {
   const params = useSearchParams();
   const departmentId = params.get("departmentId");
+
+  const [filters, setFilters] = useState<Filters>({
+    degreeId: null,
+    msarId: null,
+  });
 
   const [students, setStudents] = useState<any[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
@@ -41,14 +42,27 @@ export default function AdmissionRequestsComponent({ filters }: Props) {
   const [showPdfModal, setShowPdfModal] = useState(false);
 
   const getHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
     };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
   };
 
-  // ✅ تحميل الدرجات والمسارات مرة واحدة
+  useEffect(() => {
+    setFilters({
+      degreeId: params.get("degreeId") ? Number(params.get("degreeId")) : null,
+      msarId: params.get("msarId") ? Number(params.get("msarId")) : null,
+    });
+  }, [params]);
+
   useEffect(() => {
     const fetchLookups = async () => {
       try {
@@ -57,21 +71,21 @@ export default function AdmissionRequestsComponent({ filters }: Props) {
           fetch(`${apiUrl}/Msar/`, { headers: getHeaders() }),
         ]);
 
-        const degreeData = await degreeRes.json();
-        const msarData = await msarRes.json();
+        const degreeData = await degreeRes.json().catch(() => null);
+        const msarData = await msarRes.json().catch(() => null);
 
         if (degreeData?.succeeded && Array.isArray(degreeData.data))
           setDegrees(degreeData.data);
         if (msarData?.succeeded && Array.isArray(msarData.data))
           setMsars(msarData.data);
-      } catch {
-        console.error("فشل تحميل بيانات الفلاتر");
+      } catch (err) {
+        console.error("فشل تحميل بيانات الفلاتر", err);
       }
     };
     fetchLookups();
   }, []);
 
-  // ✅ تحميل الطلبات مرة واحدة فقط
+  // ✅ تحميل الطلبات
   useEffect(() => {
     const fetchStudents = async () => {
       setLoading(true);
@@ -80,7 +94,8 @@ export default function AdmissionRequestsComponent({ filters }: Props) {
         if (departmentId) url += `?deptId=${departmentId}`;
 
         const res = await fetch(url, { headers: getHeaders() });
-        const result = await res.json();
+        const result = await res.json().catch(() => null);
+
         if (result?.succeeded && Array.isArray(result.data)) {
           setStudents(result.data);
           setError(null);
@@ -88,16 +103,18 @@ export default function AdmissionRequestsComponent({ filters }: Props) {
           setStudents([]);
           setError("فشل تحميل البيانات");
         }
-      } catch {
+      } catch (err) {
+        console.error(err);
         setError("فشل تحميل الطلبات");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchStudents();
+    if (typeof window !== "undefined") fetchStudents();
   }, [departmentId]);
 
-  // ✅ فلترة البيانات محليًا (Frontend Filtering)
+  // ✅ فلترة البيانات
   useEffect(() => {
     let filtered = [...students];
 

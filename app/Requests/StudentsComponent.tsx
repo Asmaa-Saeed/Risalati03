@@ -51,9 +51,7 @@ interface Filters {
   msarId: number | null;
 }
 
-interface Props {
-  filters: Filters;
-}
+// In Next.js App Router, page components should not accept custom props.
 
 const DetailItem: React.FC<{
   label: string;
@@ -169,10 +167,16 @@ const StudentDetailsModal: React.FC<{
   </div>
 );
 
-export default function StudentsComponent({ filters }: Props) {
+export default function StudentsComponent() {
   const params = useSearchParams();
   const deptParam = params.get("departmentId");
   const departmentId = deptParam ? Number(deptParam) : null;
+
+  // Derive filters from URL params (if present)
+  const filters: Filters = {
+    degreeId: params.get("degreeId") ? Number(params.get("degreeId")) : null,
+    msarId: params.get("msarId") ? Number(params.get("msarId")) : null,
+  };
 
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -338,8 +342,8 @@ export default function StudentsComponent({ filters }: Props) {
   }, [
     departmentId,
     searchNationalId,
-    filters?.degreeId,
-    filters?.msarId,
+    filters.degreeId,
+    filters.msarId,
     selectedProgram,
     selectedDepartment,
     selectedStatus,

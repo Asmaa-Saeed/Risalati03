@@ -201,8 +201,8 @@ export class DegreesService {
         name: degreeData.name ?? '',
         description: degreeData.description ?? '',
         standardDurationYears: degreeData.standardDurationYears ?? 0,
-        departmentId: degreeData.departmentId ?? this.degrees.find(d => d.id === degreeData.id)?.departmentId || 0,
-        generalDegree: degreeData.generalDegree ?? this.degrees.find(d => d.id === degreeData.id)?.generalDegree || '',
+        departmentId: degreeData.departmentId ?? (this.degrees.find(d => d.id === degreeData.id)?.departmentId ?? 0),
+        generalDegree: degreeData.generalDegree ?? (this.degrees.find(d => d.id === degreeData.id)?.generalDegree ?? ''),
       });
 
       if (response.succeeded && response.data) {

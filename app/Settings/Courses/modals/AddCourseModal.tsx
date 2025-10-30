@@ -20,7 +20,7 @@ const schema = z.object({
   isOptional: z.boolean(),
   semester: z.string().min(1, "الفصل الدراسي مطلوب"),
   departmentId: z.number().int().min(1, "القسم مطلوب"),
-  degreeId: z.number().int().min(1, "الدرجة العلمية مطلوبة"),
+  degreeId: z.number().int().min(1, "الدرجة العلمية مطلوبة").optional(),
   msarId: z.number().int().min(1, "المسار مطلوب"),
   prerequisites: z.array(z.string()),
   description: z.string().optional(),

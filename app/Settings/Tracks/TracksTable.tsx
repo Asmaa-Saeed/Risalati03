@@ -70,7 +70,7 @@ export default function TracksTable({
         ),
       },
       {
-        accessorFn: (row) => row.degree.name,
+        accessorFn: (row: Track) => row.degree?.name ?? '',
         id: "degreeName",
         header: ({ column }: HeaderContext<Track, unknown>) => (
           <button

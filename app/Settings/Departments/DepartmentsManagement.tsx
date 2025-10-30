@@ -142,8 +142,13 @@ const handleDeleteDepartment = async () => {
 
   setSaving(true);
   try {
-    const token = localStorage.getItem("token"); // أو حسب مكان تخزينك للتوكن
-    const response = await DepartmentsService.deleteDepartment(selectedDepartment.id, token!);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+    
+    // Set the token in the headers for the request
+    const response = await DepartmentsService.deleteDepartment(selectedDepartment.id);
 
     if (response.success) {
       await loadDepartments();

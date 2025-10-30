@@ -100,8 +100,8 @@ export default function ViewDegreeModal({ isOpen, onClose, degree }: ViewDegreeM
                     <FolderOpen className="text-purple-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">اسم القسم</p>
-                    <p className="font-medium text-gray-900">{degree.departmentName}</p>
+                    <p className="text-sm text-gray-600">معرف القسم</p>
+                    <p className="font-medium text-gray-900">{degree.departmentId}</p>
                   </div>
                 </div>
 
@@ -116,20 +116,7 @@ export default function ViewDegreeModal({ isOpen, onClose, degree }: ViewDegreeM
               </div>
             </div>
 
-            {/* Timestamps */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">معلومات النظام</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <label className="block text-gray-600 mb-1">تاريخ الإنشاء</label>
-                  <p className="text-gray-900 font-medium">{formatDate(degree.createdAt)}</p>
-                </div>
-                <div>
-                  <label className="block text-gray-600 mb-1">آخر تحديث</label>
-                  <p className="text-gray-900 font-medium">{formatDate(degree.updatedAt)}</p>
-                </div>
-              </div>
-            </div>
+            {/* Timestamps removed as they are not part of the Degree type */}
           </div>
 
           {/* Actions */}

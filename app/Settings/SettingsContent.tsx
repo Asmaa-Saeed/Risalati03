@@ -152,28 +152,17 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const userData = localStorage.getItem("user");
-
-        // Check if both token and user data exist
-        if (!token || !userData) {
-          // Show error message and provide option to go back
-          setMessage({
-            type: "error",
-            text: "يرجى تسجيل الدخول أولاً للوصول إلى الإعدادات"
-          });
-          setLoading(false);
-          return;
-        }
-
         // Load user data
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setProfileForm({
-          name: parsedUser.name || "",
-          email: parsedUser.email || "",
-          phone: parsedUser.phone || "",
-        });
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          setProfileForm({
+            name: parsedUser.name || "",
+            email: parsedUser.email || "",
+            phone: parsedUser.phone || "",
+          });
+        }
 
         // Load settings from API
         const settingsResponse = await getUserSettings();
@@ -312,7 +301,6 @@ export default function SettingsPage() {
   const sections = [
     { id: "profile", label: "الملف الشخصي", icon: <User size={20} /> },
     { id: "account", label: "إدارة الحساب", icon: <UserCheck size={20} /> },
-    { id: "notifications", label: "الإشعارات", icon: <Bell size={20} /> },
     { id: "instructors", label: "أعضاء هيئة التدريس", icon: <Users size={20} /> },
     { id: "courses", label: "المقررات (المواد)", icon: <BookOpen size={20} /> },
     { id: "universities", label: "الجامعات", icon: <Building size={20} /> },
@@ -334,24 +322,24 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
+    <div className="min-h-screen bg-custom-beige" dir="rtl">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      {/* <div className="bg-custom-sub-beige shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-3">
-              <SettingsIcon className="text-teal-600" size={24} />
-              <h1 className="text-xl font-bold text-gray-900">إعدادات الحساب</h1>
+              <SettingsIcon className="text-gray-800" size={28} />
+              <h1 className="text-2xl font-bold text-gray-800">إعدادات النظام</h1>
             </div>
             <button
               onClick={() => router.back()}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-800 hover:text-gray-700"
             >
               <X size={24} />
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Message Alert */}
@@ -372,37 +360,50 @@ export default function SettingsPage() {
                 onClick={() => router.push("/")}
                 className="mr-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
               >
-                العودة للرئيسية
+                تسجيل الدخول
               </button>
             )}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-8">
-              <nav className="space-y-2">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id as SettingsSection)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-right rounded-lg transition-colors ${
-                      activeSection === section.id
-                        ? "bg-teal-50 text-teal-700 border border-teal-200"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    {section.icon}
-                    <span className="font-medium">{section.label}</span>
-                  </button>
-                ))}
-              </nav>
+        <div className="flex flex-col lg:flex-row min-h-screen">
+          {/* Fixed Sidebar Navigation */}
+          <div className="w-full lg:w-64 bg-custom-teal shadow-lg p-4 lg:fixed lg:right-0 lg:top-0 lg:h-full lg:overflow-y-auto">
+            <h2 className="text-white text-center text-2xl font-bold mb-6 px-4">إعدادات النظام</h2>
+            <nav className="space-y-1">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id as SettingsSection)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
+                    activeSection === section.id
+                      ? "bg-teal-50 text-teal-700 border border-teal-200"
+                      : " hover:bg-white/10 text-white "
+                  }`}
+                >
+                  {section.icon}
+                  <span className="font-medium">{section.label}</span>
+                </button>
+              ))}
+            </nav>
+            
+           
+            {/* Back Button */}
+            <div className="mt-auto pt-6 border-t border-white/20">
+              <button
+                onClick={() => window.history.back()}
+                className="w-full flex items-center justify-center gap-2 cursor-pointer bg-teal-50 text-teal-700 px-4 py-3 rounded-lg font-medium transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                <span>العودة للخلف</span>
+              </button>
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
+          {/* Main Content with offset for fixed sidebar */}
+          <div className="w-full lg:pr-64">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
               {/* Profile Section */}
               {activeSection === "profile" && (
@@ -411,7 +412,6 @@ export default function SettingsPage() {
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">الملف الشخصي</h2>
                     <p className="text-gray-600">إدارة معلوماتك الشخصية وتفضيلاتك</p>
                   </div>
-
                   {/* Avatar Section - Simplified */}
                   <div className="flex items-center gap-6">
                     <div className="relative">
@@ -606,149 +606,7 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* Notifications Section */}
-              {activeSection === "notifications" && (
-                <div className="space-y-8">
-                  <div className="text-right">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">إعدادات الإشعارات</h2>
-                    <p className="text-gray-600">اختر كيفية تلقي الإشعارات</p>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Email Notifications - Simplified */}
-                    <div className="flex items-center justify-between py-4">
-                      <div className="flex items-center gap-3">
-                        <Mail className="text-gray-600" size={20} />
-                        <div>
-                          <h3 className="font-medium text-gray-900">الإشعارات عبر البريد الإلكتروني</h3>
-                          <p className="text-sm text-gray-600">تلقي الإشعارات المهمة عبر البريد الإلكتروني</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.emailNotifications}
-                          onChange={(e) => setNotifications(prev => ({ ...prev, emailNotifications: e.target.checked }))}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Push Notifications - Simplified */}
-                    <div className="flex items-center justify-between py-4">
-                      <div className="flex items-center gap-3">
-                        <Smartphone className="text-gray-600" size={20} />
-                        <div>
-                          <h3 className="font-medium text-gray-900">إشعارات الدفع</h3>
-                          <p className="text-sm text-gray-600">تلقي إشعارات فورية على الجهاز</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.pushNotifications}
-                          onChange={(e) => setNotifications(prev => ({ ...prev, pushNotifications: e.target.checked }))}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
-                    </div>
-
-                    {/* SMS Notifications */}
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <MessageSquare className="text-gray-600" size={20} />
-                        <div>
-                          <h3 className="font-medium text-gray-900">الرسائل النصية</h3>
-                          <p className="text-sm text-gray-600">تلقي الإشعارات عبر الرسائل النصية</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.smsNotifications}
-                          onChange={(e) => setNotifications(prev => ({ ...prev, smsNotifications: e.target.checked }))}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Request Updates */}
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="text-gray-600" size={20} />
-                        <div>
-                          <h3 className="font-medium text-gray-900">تحديثات الطلبات</h3>
-                          <p className="text-sm text-gray-600">إشعارات عن حالة طلباتك</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.requestUpdates}
-                          onChange={(e) => setNotifications(prev => ({ ...prev, requestUpdates: e.target.checked }))}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
-                    </div>
-
-                    {/* System Updates */}
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <SettingsIcon className="text-gray-600" size={20} />
-                        <div>
-                          <h3 className="font-medium text-gray-900">تحديثات النظام</h3>
-                          <p className="text-sm text-gray-600">إشعارات عن صيانة النظام والتحديثات</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.systemUpdates}
-                          onChange={(e) => setNotifications(prev => ({ ...prev, systemUpdates: e.target.checked }))}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Marketing Emails */}
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Mail className="text-gray-600" size={20} />
-                        <div>
-                          <h3 className="font-medium text-gray-900">الرسائل التسويقية</h3>
-                          <p className="text-sm text-gray-600">عروض خاصة ومحتوى ترويجي</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notifications.marketingEmails}
-                          onChange={(e) => setNotifications(prev => ({ ...prev, marketingEmails: e.target.checked }))}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Save Button */}
-                  <div className="flex justify-end">
-                    <button
-                      onClick={saveNotifications}
-                      disabled={saving}
-                      className="flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Save size={18} />
-                      {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}
-                    </button>
-                  </div>
-                </div>
-              )}
+           
 
               {/* Instructors Section */}
               {activeSection === "instructors" && (

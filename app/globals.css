@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-custom-beige: #faebd6;
+  --color-custom-beige: #f6efdf;
+  --color-custom-sub-beige: #faf3e9;
   --color-custom-teal: #4b7770;
+  --color-custom-sub-teal: #a8fde8;
+  --color-custom-text-gray: #7b7b77;
 }
 
 @layer base {

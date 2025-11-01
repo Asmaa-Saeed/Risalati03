@@ -95,17 +95,13 @@ export default function EditDepartmentModal({
   const handleFormSubmit = async (data: DepartmentFormData) => {
     if (!department) return;
 
-    try {
-      await onSubmit({
-        id: department.id,
-        name: data.name.trim(),
-        description: data.description.trim(),
-        programId: data.programId,
-      });
-      onClose(); // Close modal after success
-    } catch (error) {
-      console.error("❌ Error updating department:", error);
-    }
+    // This will be handled by the parent component (DepartmentsManagement)
+    await onSubmit({
+      id: department.id,
+      name: data.name.trim(),
+      description: data.description.trim(),
+      programId: data.programId,
+    });
   };
 
   if (!isVisible) return null;

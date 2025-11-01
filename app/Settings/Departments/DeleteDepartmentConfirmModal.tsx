@@ -93,8 +93,8 @@ export default function DeleteDepartmentConfirmModal({
             {/* Department Info - Simplified */}
             <div className="text-sm">
               <div className="font-medium text-gray-900 mb-1">{department?.name}</div>
-              <div className="text-gray-500 text-xs">الرقم التعريفي: {department?.id}</div>
-              <div className="text-gray-500 text-xs">عدد الطلاب: {department?.totalStudents}</div>
+              {/* <div className="text-gray-500 text-xs">الرقم التعريفي: {department?.id}</div> */}
+              {/* <div className="text-gray-500 text-xs">عدد الطلاب: {department?.totalStudents}</div> */}
             </div>
           </div>
 

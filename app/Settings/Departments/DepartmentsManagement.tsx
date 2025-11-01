@@ -113,25 +113,34 @@ export default function DepartmentsManagement() {
   };
 
 const handleEditDepartment = async (data: UpdateDepartmentData) => {
-  if (!data?.id) return;
+  if (!data?.id || !selectedDepartment) return;
 
   setSaving(true);
   try {
-    const response = await DepartmentsService.updateDepartment(data);
+    // ✅ ندمج البيانات من المودال مع selectedDepartment علشان نمرر كل البيانات
+    const completeData: UpdateDepartmentData = {
+      ...selectedDepartment,
+      ...data,
+    };
+
+    const response = await DepartmentsService.updateDepartment(completeData);
 
     if (response.success) {
-      // ✅ نفس فكرة الـ delete بالضبط
-      await loadDepartments(); // نعيد تحميل الجدول من السيرفر
+      // ✅ نعيد تحميل الجدول من السيرفر
+      await loadDepartments();
       setCurrentPage(1);
 
-      toast.success("✅ تم تحديث القسم بنجاح");
+      // ✅ نعرض رسالة النجاح من الـ API
+      toast.success(response.message || "تم تحديث القسم بنجاح");
       closeModal(); // نقفل المودال بعد النجاح
     } else {
-      toast.error(response.message || "❌ فشل في تحديث القسم");
+      // ✅ نعرض رسالة الخطأ من الـ API
+      toast.error(response.message || "فشل في تحديث القسم");
     }
   } catch (error) {
     console.error("❌ Error updating department:", error);
-    toast.error("حدث خطأ أثناء تحديث القسم");
+    const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث القسم";
+    toast.error(errorMessage);
   } finally {
     setSaving(false);
   }

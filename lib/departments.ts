@@ -304,17 +304,18 @@ export class DepartmentsService {
 
       const response = await updateDepartment(parseInt(departmentData.id), apiData, token);
 
-      if (response.success && response.data) {
-        // Transform API response to match our interface
+      if (response.success) {
+        // ✅ الـ API يرجع data: true, مش object كامل
+        // نستخدم البيانات اللي عندنا من departmentData
         const updatedDepartment: Department = {
           id: departmentData.id,
           departmentId: departmentData.departmentId || `DEPT_${departmentData.id}`,
-          name: response.data.name,
-          description: response.data.description || '',
-          programId: response.data.programId.toString(),
+          name: departmentData.name!,
+          description: departmentData.description!,
+          programId: departmentData.programId!,
           programName: departmentData.programName || 'برنامج غير محدد',
           collegeId: departmentData.collegeId || '1',
-          collegeName: departmentData.collegeName || '', // Use empty string instead of default college name
+          collegeName: departmentData.collegeName || '',
           headOfDepartment: departmentData.headOfDepartment || 'لم يحدد',
           headOfDepartmentId: departmentData.headOfDepartmentId || `HOD_${departmentData.id}`,
           totalStudents: departmentData.totalStudents || 0,

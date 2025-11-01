@@ -70,27 +70,7 @@ export default function DepartmentsTable({
           </div>
         ),
       },
-      {
-        accessorKey: "description",
-        header: ({ column }: HeaderContext<Department, unknown>) => (
-          <button
-            className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
-            onClick={() => column.toggleSorting()}
-          >
-            الوصف
-            {column.getIsSorted() === "asc" ? (
-              <ChevronUp size={16} />
-            ) : column.getIsSorted() === "desc" ? (
-              <ChevronDown size={16} />
-            ) : null}
-          </button>
-        ),
-        cell: ({ row }: CellContext<Department, unknown>) => (
-          <div className="text-right">
-            <span className="text-gray-700 text-sm line-clamp-2">{row.getValue("description")}</span>
-          </div>
-        ),
-      },
+      
       {
         accessorKey: "programName",
         header: ({ column }: HeaderContext<Department, unknown>) => (
@@ -109,6 +89,27 @@ export default function DepartmentsTable({
         cell: ({ row }: CellContext<Department, unknown>) => (
           <div className="text-right">
             <span className="font-medium text-gray-900">{row.getValue("programName")}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "description",
+        header: ({ column }: HeaderContext<Department, unknown>) => (
+          <button
+            className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+            onClick={() => column.toggleSorting()}
+          >
+            الوصف
+            {column.getIsSorted() === "asc" ? (
+              <ChevronUp size={16} />
+            ) : column.getIsSorted() === "desc" ? (
+              <ChevronDown size={16} />
+            ) : null}
+          </button>
+        ),
+        cell: ({ row }: CellContext<Department, unknown>) => (
+          <div className="text-right">
+            <span className="text-gray-700 text-sm line-clamp-2">{row.getValue("description")}</span>
           </div>
         ),
       },

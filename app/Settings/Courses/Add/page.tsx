@@ -156,7 +156,8 @@ export default function AddCoursePage() {
   const goBack = () => router.back();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen w-full bg-custom-beige py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <Toast
         show={Boolean(message) && showToast}
         type={message?.type === "success" ? "success" : "error"}
@@ -166,48 +167,64 @@ export default function AddCoursePage() {
         position="top-center"
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div className="text-right">
           <h1 className="text-2xl font-bold text-gray-900">إضافة مقرر جديد</h1>
-          <p className="text-gray-600">قم بتعبئة الحقول التالية لإضافة مقرر</p>
+          <p className="text-gray-600 mt-1">قم بتعبئة الحقول التالية لإضافة مقرر</p>
         </div>
         <button
           onClick={goBack}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 shadow-sm hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-all duration-200 w-full md:w-auto"
         >
-          العودة إلى الصفحة السابقة
-          <ArrowRight size={18} />
+          <span>العودة إلى الصفحة السابقة</span>
+          <ArrowRight size={18} className="rtl:rotate-180" />
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {loadingLookups ? (
           <div className="p-8 flex items-center justify-center text-gray-600">
             <Loader2 className="animate-spin mr-2" /> جاري تحميل البيانات...
           </div>
         ) : (
           <form onSubmit={handleSubmit(onValid, handleInvalid)} className="p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-1">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">كود المقرر *</label>
-                <input {...register("code")} type="text" className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.code ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`} placeholder="مثال: CS101" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">كود المقرر *</label>
+                <input 
+                  {...register("code")} 
+                  type="text" 
+                  className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors ${errors.code ? "border-red-500 bg-red-50" : "border-gray-200 hover:border-gray-300"}`} 
+                  placeholder="مثال: CS101" 
+                />
                 {errors.code && <p className="mt-2 text-sm text-red-600">{errors.code.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">اسم المقرر *</label>
-                <input {...register("name")} type="text" className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.name ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`} placeholder="مثال: مقدمة في علوم الحاسب" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">اسم المقرر *</label>
+                <input 
+                  {...register("name")} 
+                  type="text" 
+                  className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors ${errors.name ? "border-red-500 bg-red-50" : "border-gray-200 hover:border-gray-300"}`} 
+                  placeholder="مثال: مقدمة في علوم الحاسب" 
+                />
                 {errors.name && <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">عدد الساعات *</label>
-                <input {...register("creditHours", { valueAsNumber: true })} type="number" min={0} className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.creditHours ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`} placeholder="مثال: 3" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">عدد الساعات *</label>
+                <input 
+                  {...register("creditHours", { valueAsNumber: true })} 
+                  type="number" 
+                  min={0} 
+                  className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors ${errors.creditHours ? "border-red-500 bg-red-50" : "border-gray-200 hover:border-gray-300"}`} 
+                  placeholder="مثال: 3" 
+                />
                 {errors.creditHours && <p className="mt-2 text-sm text-red-600">{errors.creditHours.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">الفصل الدراسي *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">الفصل الدراسي *</label>
                 <select
                   {...register("semester")}
-                  className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.semester ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}
+                  className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors ${errors.semester ? "border-red-500 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
                 >
                   <option value="">اختر الفصل الدراسي</option>
                   {semesters.map((s) => (
@@ -217,7 +234,7 @@ export default function AddCoursePage() {
                 {errors.semester && <p className="mt-2 text-sm text-red-600">{errors.semester.message}</p>}
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">حالة المادة (اختياري/إجباري)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">حالة المادة (اختياري/إجباري)</label>
                 <select
                   {...register("isOptional", { setValueAs: (v) => v === "true" })}
                   defaultValue={"false"}
@@ -228,7 +245,7 @@ export default function AddCoursePage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">الوصف (اختياري)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">الوصف (اختياري)</label>
                 <textarea
                   {...register("description")}
                   rows={3}
@@ -236,8 +253,8 @@ export default function AddCoursePage() {
                   className="w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 border-gray-200 hover:border-gray-300"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">القسم</label>
+              {/* <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">القسم</label>
                 <select {...register("departmentId", { valueAsNumber: true })} className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.departmentId ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}>
                   <option value={0}>اختر القسم</option>
                   {departments.map((d) => (
@@ -245,20 +262,18 @@ export default function AddCoursePage() {
                   ))}
                 </select>
                 {errors.departmentId && <p className="mt-2 text-sm text-red-600">{errors.departmentId.message}</p>}
-                {/* <p className="mt-1 text-xs text-gray-500">لن يتم إرسال هذا الحقل إلى الخادم.</p> */}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">الدرجة العلمية</label>
+              </div> */}
+              {/* <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">الدرجة العلمية</label>
                 <select {...register("degreeId", { valueAsNumber: true })} className="w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 border-gray-200 hover:border-gray-300">
                   <option value="">بدون درجة</option>
                   {degrees.map((t) => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-500">لن يتم إرسال هذا الحقل إلى الخادم.</p>
-              </div>
+              </div> */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">المسار *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">المسار *</label>
                 <select {...register("msarId", { valueAsNumber: true })} className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.msarId ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}>
                   <option value={0}>اختر المسار</option>
                   {filteredTracks.map((t) => (
@@ -418,16 +433,37 @@ export default function AddCoursePage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 pt-6 border-t border-gray-200/50 bg-gray-50/50 rounded-b-2xl p-6">
-              <button type="button" onClick={goBack} className="px-8 py-3 text-gray-700 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400" disabled={saving}>العودة إلى الصفحة السابقة</button>
-              <button type="submit" disabled={saving} className="flex items-center gap-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white px-8 py-3 rounded-xl hover:from-teal-700 hover:to-blue-700">
-                {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                {saving ? "جاري الحفظ..." : "حفظ المقرر"}
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100 bg-gray-50/80 p-6">
+              <button 
+                type="button" 
+                onClick={goBack} 
+                className="flex-1 sm:flex-none px-6 py-3 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed" 
+                disabled={saving}
+              >
+                العودة
+              </button>
+              <button 
+                type="submit" 
+                disabled={saving} 
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-teal-700 hover:to-blue-700 shadow-sm hover:shadow-md transition-all disabled:opacity-80 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>جاري الحفظ...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    <span>حفظ المقرر</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
-        )}
+      )} 
       </div>
+    </div>
     </div>
   );
 }

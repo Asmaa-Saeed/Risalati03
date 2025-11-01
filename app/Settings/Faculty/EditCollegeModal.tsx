@@ -74,14 +74,14 @@ export default function EditCollegeModal({ isOpen, onClose, onSubmit, college, l
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-8 space-y-8">
           <div className="max-w-lg mx-auto">
             {/* College ID - Display only */}
-            <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200/50">
+            {/* <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200/50">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 رقم الكلية
               </label>
               <div className="w-full px-4 py-3 border border-gray-300/50 rounded-lg bg-white/70 text-gray-700 font-medium text-lg">
                 {college.id}
               </div>
-            </div>
+            </div> */}
 
             {/* College Name */}
             <div className="space-y-3">

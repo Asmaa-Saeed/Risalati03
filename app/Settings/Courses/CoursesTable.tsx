@@ -161,36 +161,7 @@ export default function CoursesTable({ items, onEdit, onDelete, onAdd, searchQue
         return <div className="text-right text-gray-900">{label}</div>;
       },
     },
-    // {
-    //   accessorKey: "department",
-    //   header: ({ column }) => (
-    //     <button className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-    //       القسم
-    //       {column.getIsSorted() === "asc" ? <ChevronUp size={16} /> : column.getIsSorted() === "desc" ? <ChevronDown size={16} /> : null}
-    //     </button>
-    //   ),
-    //   cell: ({ row }) => <div className="text-right text-gray-900">{row.original.department}</div>,
-    // },
-    // {
-    //   accessorKey: "degree",
-    //   header: ({ column }) => (
-    //     <button className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-    //       الدرجة العلمية
-    //       {column.getIsSorted() === "asc" ? <ChevronUp size={16} /> : column.getIsSorted() === "desc" ? <ChevronDown size={16} /> : null}
-    //     </button>
-    //   ),
-    //   cell: ({ row }) => <div className="text-right text-gray-900">{row.original.degree}</div>,
-    // },
-    {
-      accessorKey: "msar",
-      header: ({ column }) => (
-        <button className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          المسار
-          {column.getIsSorted() === "asc" ? <ChevronUp size={16} /> : column.getIsSorted() === "desc" ? <ChevronDown size={16} /> : null}
-        </button>
-      ),
-      cell: ({ row }) => <div className="text-right text-gray-900">{row.original.msar}</div>,
-    },
+   
     {
       id: "instructors",
       header: ({ column }) => (

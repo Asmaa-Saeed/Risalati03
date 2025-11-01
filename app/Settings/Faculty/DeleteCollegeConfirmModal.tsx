@@ -86,10 +86,10 @@ export default function DeleteCollegeConfirmModal({
             </h3>
             <div className="bg-gradient-to-r from-gray-50 to-teal-50 p-5 rounded-xl border-2 border-teal-200/50 shadow-inner">
               <div className="text-sm text-gray-700 space-y-2">
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
                   <p><span className="font-bold text-teal-800">رقم الكلية:</span> <span className="text-gray-900 font-medium">{college.id}</span></p>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
                   <p><span className="font-bold text-teal-800">اسم الكلية:</span> <span className="text-gray-900 font-medium">{college.name}</span></p>

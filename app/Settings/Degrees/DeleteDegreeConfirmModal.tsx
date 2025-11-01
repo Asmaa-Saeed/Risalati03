@@ -1,30 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Trash2, AlertTriangle, Clock } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { Degree } from "@/lib/degrees";
 
 interface DeleteDegreeConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (id: number) => Promise<{ success: boolean; message?: string }>;
   degree: Degree | null;
   loading?: boolean;
+  onSuccess?: () => void;
 }
 
-export default function DeleteDegreeConfirmModal(props: DeleteDegreeConfirmModalProps) {
-  const { isOpen, onClose, onConfirm, degree, loading = false } = props;
+export default function DeleteDegreeConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  degree,
+  loading = false,
+  onSuccess,
+}: DeleteDegreeConfirmModalProps) {
+  const [isVisible, setIsVisible] = useState(false);
 
-  if (!isOpen || !degree) return null;
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+    } else {
+      // Delay hiding to allow exit animation
+      const timer = setTimeout(() => setIsVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
-  const [message, setMessage] = useState({ type: "", text: "" });
+  if (!isVisible || !degree) return null;
 
   const handleConfirm = async () => {
+    if (!degree) return;
+
     try {
-      await onConfirm();
-      onClose();
+      const result = await onConfirm(degree.id);
+
+      if (result.success) {
+        // Show success toast matching the add/edit style
+        toast.success(result.message || "تم حذف الدرجة العلمية بنجاح ");
+        onSuccess?.();
+        onClose();
+      } else {
+        toast.error(result.message || "حدث خطأ أثناء حذف الدرجة العلمية");
+      }
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في حذف الدرجة" });
+      console.error("Error in delete confirmation:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+      toast.error(errorMessage);
+      onClose();
     }
   };
 

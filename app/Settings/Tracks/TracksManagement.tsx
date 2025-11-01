@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { TracksService, CreateTrackData, UpdateTrackData, Track } from "@/lib/tracks";
 import TracksTable from "./TracksTable";
 import AddTrackModal from "./AddTrackModal";
@@ -14,10 +15,6 @@ export default function TracksManagement() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
   // Modal states
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -39,14 +36,12 @@ export default function TracksManagement() {
       if (response.succeeded && response.data) {
         setTracks(response.data);
       } else {
-        setMessage({
-          type: "error",
-          text: response.message || "حدث خطأ في تحميل البيانات",
-        });
+        toast.error(response.message || "حدث خطأ في تحميل المسارات الدراسية");
       }
     } catch (error) {
       console.error("❌ Error loading tracks:", error);
-      setMessage({ type: "error", text: "حدث خطأ في تحميل البيانات" });
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في تحميل المسارات الدراسية";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
       setCurrentPage(1);
@@ -60,18 +55,14 @@ export default function TracksManagement() {
       if (response.succeeded && response.data) {
         await loadTracks();
         closeModal();
-        setMessage({ type: "success", text: "✅ تم إضافة المسار بنجاح" });
-        setTimeout(() => setMessage(null), 3000);
+        toast.success("✅ تم إضافة المسار بنجاح");
       } else {
-        setMessage({
-          type: "error",
-          text: response.message || "❌ فشل في إضافة المسار",
-        });
-        setTimeout(() => setMessage(null), 3000);
+        toast.error(response.message || "❌ فشل في إضافة المسار");
       }
     } catch (error) {
-      setMessage({ type: "error", text: "❌ حدث خطأ في إضافة المسار" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error adding track:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في إضافة المسار";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -88,46 +79,44 @@ export default function TracksManagement() {
         await loadTracks();
 
         closeModal();
-        setMessage({ type: "success", text: "✅ تم تحديث المسار بنجاح" });
-        setTimeout(() => setMessage(null), 3000);
+        toast.success("✅ تم تحديث المسار بنجاح");
       } else {
-        setMessage({
-          type: "error",
-          text: response.message || "❌ فشل في تحديث المسار",
-        });
-        setTimeout(() => setMessage(null), 3000);
+        toast.error(response.message || "❌ فشل في تحديث المسار");
       }
     } catch (error) {
       console.error("❌ Error updating track:", error);
-      setMessage({ type: "error", text: "❌ حدث خطأ أثناء تحديث المسار" });
-      setTimeout(() => setMessage(null), 3000);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث المسار";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteTrack = async () => {
-    if (!selectedTrack) return;
-
-    setSaving(true);
+  const handleDeleteTrack = async (id: number): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await TracksService.deleteTrack(selectedTrack.id);
-
+      setSaving(true);
+      const response = await TracksService.deleteTrack(id);
+      
       if (response.succeeded) {
         await loadTracks();
         setCurrentPage(1);
-        setMessage({ type: "success", text: "✅ " + (response.message || "تم حذف المسار بنجاح") });
-        setTimeout(() => setMessage(null), 3000);
+        return { 
+          success: true, 
+          message: "✅ تم حذف المسار بنجاح" 
+        };
       } else {
-        setMessage({
-          type: "error",
-          text: "❌ " + (response.message || "حدث خطأ في حذف المسار"),
-        });
-        setTimeout(() => setMessage(null), 3000);
+        return { 
+          success: false, 
+          message: response.message || "❌ حدث خطأ في حذف المسار" 
+        };
       }
     } catch (error) {
-      setMessage({ type: "error", text: "❌ حدث خطأ في حذف المسار" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error deleting track:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في حذف المسار";
+      return { 
+        success: false, 
+        message: errorMessage 
+      };
     } finally {
       setSaving(false);
     }
@@ -173,24 +162,6 @@ export default function TracksManagement() {
           إدارة وتنظيم جميع المسارات التخصصية في النظام الأكاديمي
         </p>
       </div>
-
-      {/* Message Alert */}
-      {message && (
-        <div
-          className={`p-4 rounded-xl flex items-center gap-3 shadow-lg transform transition-all duration-500 ease-in-out animate-in slide-in-from-top-2 ${
-            message.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200 shadow-green-100"
-              : "bg-red-50 text-red-800 border border-red-200 shadow-red-100"
-          }`}
-        >
-          {message.type === "success" ? (
-            <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
-          ) : (
-            <AlertTriangle size={20} className="text-red-600 flex-shrink-0" />
-          )}
-          <span className="font-medium">{message.text}</span>
-        </div>
-      )}
 
       {/* Data Table */}
       <TracksTable
@@ -255,6 +226,9 @@ export default function TracksManagement() {
         onConfirm={handleDeleteTrack}
         track={selectedTrack}
         loading={saving}
+        onSuccess={() => {
+          closeModal();
+        }}
       />
     </div>
   );

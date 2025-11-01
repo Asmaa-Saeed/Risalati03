@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { Degree, DegreesService, CreateDegreeData, UpdateDegreeData, DegreesApiResponse } from "@/lib/degrees";
 import DegreesTable from "./DegreesTable";
 import AddDegreeModal from "./AddDegreeModal";
@@ -15,7 +16,6 @@ export default function DegreesManagement() {
   const [degrees, setDegrees] = useState<Degree[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [departmentsMap, setDepartmentsMap] = useState<Record<number, string>>({});
 
   // Modal states
@@ -37,12 +37,14 @@ export default function DegreesManagement() {
     try {
       const response: DegreesApiResponse = await DegreesService.getDegrees();
       if (response.succeeded) {
-        setDegrees(response.data); // Always start from first page when loading
+        setDegrees(response.data);
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في تحميل البيانات" });
+        toast.error(response.message || "حدث خطأ في تحميل الدرجات العلمية");
       }
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في تحميل البيانات" });
+      console.error("❌ Error loading degrees:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في تحميل الدرجات العلمية";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -71,16 +73,16 @@ export default function DegreesManagement() {
     try {
       const response = await DegreesService.createDegree(degreeData);
       if (response.succeeded) {
-        // Refresh the degrees list from the server
         await loadDegrees();
-        setMessage({ type: "success", text: response.message! });
+        toast.success(response.message || "تمت إضافة الدرجة العلمية بنجاح 🎉");
+        closeModal();
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في إضافة الدرجة العلمية" });
+        toast.error(response.message || "حدث خطأ أثناء إضافة الدرجة العلمية");
       }
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في إضافة الدرجة العلمية" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error adding degree:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الدرجة العلمية";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -91,39 +93,35 @@ export default function DegreesManagement() {
     try {
       const response = await DegreesService.updateDegree(degreeData);
       if (response.succeeded) {
-        // Refresh the degrees list from the server
         await loadDegrees();
-        setMessage({ type: "success", text: response.message! });
+        toast.success(response.message || "تم تحديث الدرجة العلمية بنجاح 🎉");
+        closeModal();
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في تحديث الدرجة العلمية" });
+        toast.error(response.message || "حدث خطأ أثناء تحديث الدرجة العلمية");
       }
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في تحديث الدرجة العلمية" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error updating degree:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث الدرجة العلمية";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteDegree = async () => {
-    if (!selectedDegree) return;
-
-    setSaving(true);
+  const handleDeleteDegree = async (id: number): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await DegreesService.deleteDegree(selectedDegree.id);
-      if (response.succeeded) {
-        // Refresh the degrees list from the server
-        await loadDegrees();
-        setMessage({ type: "success", text: response.message! });
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        // If there's a specific error message from the server, throw it
-        throw new Error(response.message || "حدث خطأ في حذف الدرجة العلمية");
-      }
-    } catch (error: any) {
-      // Re-throw the error to be caught by the modal
-      throw error;
+      setSaving(true);
+      const response = await DegreesService.deleteDegree(id);
+      return { 
+        success: response.succeeded, 
+        message: response.message
+      };
+    } catch (error) {
+      console.error("❌ Error deleting degree:", error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الدرجة العلمية" 
+      };
     } finally {
       setSaving(false);
     }
@@ -174,21 +172,6 @@ export default function DegreesManagement() {
       </div>
 
       {/* Message Alert */}
-      {message && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${
-          message.type === "success"
-            ? "bg-green-50 text-green-800 border border-green-200"
-            : "bg-red-50 text-red-800 border border-red-200"
-        }`}>
-          {message.type === "success" ? (
-            <CheckCircle size={20} />
-          ) : (
-            <AlertTriangle size={20} />
-          )}
-          <span>{message.text}</span>
-        </div>
-      )}
-
       {/* Data Table */}
       {/* Statistics cards removed as requested - direct table view for better space utilization */}
       <DegreesTable
@@ -200,92 +183,78 @@ export default function DegreesManagement() {
         onAdd={() => openModal("add")}
       />
 
-      {/* Pagination */}
+
+      {/* Pagination Controls - Centered */}
       {totalPages > 1 && (
-        <div className="space-y-4">
-          {/* Pagination Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-            <div className="text-sm text-blue-800">
-              <span className="font-medium">💡 نصيحة:</span> يمكنك التنقل بين الصفحات باستخدام الأزرار أو النقر مباشرة على رقم الصفحة المطلوبة
-            </div>
-          </div>
+        <div className="flex items-center justify-center mt-6">
+          <div className="flex items-center gap-2 bg-white shadow-sm border border-gray-200 rounded-xl p-2">
+            {/* Previous Button */}
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-all duration-200 hover:shadow-md"
+            >
+              <span>← السابق</span>
+            </button>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200">
-            {/* Page Info */}
-            <div className="text-sm text-gray-600 text-center sm:text-right">
-              <div className="font-medium">عرض {startIndex + 1}-{Math.min(endIndex, degrees.length)} من {degrees.length} درجة علمية</div>
-              <div className="text-xs text-gray-500 mt-1">الصفحة {currentPage} من {totalPages}</div>
-            </div>
-
-            {/* Pagination Controls */}
+            {/* Page Numbers */}
             <div className="flex items-center gap-2">
-              {/* Previous Button */}
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
-              >
-                ← السابق
-              </button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                // Show first page, last page, current page, and pages around current
+                let pageToShow;
+                if (totalPages <= 5) {
+                  // If 5 or fewer pages, show all
+                  pageToShow = i + 1;
+                } else if (currentPage <= 3) {
+                  // Near start
+                  pageToShow = i + 1;
+                  if (i === 4) pageToShow = totalPages;
+                } else if (currentPage >= totalPages - 2) {
+                  // Near end
+                  pageToShow = i === 0 ? 1 : totalPages - 4 + i;
+                } else {
+                  // Middle
+                  pageToShow = currentPage - 2 + i;
+                  if (i === 0) pageToShow = 1;
+                  if (i === 4) pageToShow = totalPages;
+                }
 
-              {/* Page Numbers */}
-              <div className="flex items-center gap-1">
-                {/* First page */}
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      1
-                    </button>
-                    {currentPage > 4 && <span className="px-2 text-gray-500">...</span>}
-                  </>
-                )}
+                const isCurrentPage = pageToShow === currentPage;
+                const isEllipsis = (i === 1 && pageToShow > 2 && currentPage > 3) || 
+                                  (i === 3 && pageToShow < totalPages - 1 && currentPage < totalPages - 2);
 
-                {/* Current page range */}
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNumber = Math.max(1, Math.min(totalPages, currentPage - 2 + i));
-                  if (pageNumber < 1 || pageNumber > totalPages) return null;
-
+                if (isEllipsis) {
                   return (
-                    <button
-                      key={pageNumber}
-                      onClick={() => handlePageChange(pageNumber)}
-                      className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                        pageNumber === currentPage
-                          ? "text-white bg-teal-600 border border-teal-600 shadow-sm"
-                          : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {pageNumber}
-                    </button>
+                    <span key={`ellipsis-${i}`} className="px-3 py-2 text-gray-500">
+                      ...
+                    </span>
                   );
-                })}
+                }
 
-                {/* Last page */}
-                {currentPage < totalPages - 2 && (
-                  <>
-                    {currentPage < totalPages - 3 && <span className="px-2 text-gray-500">...</span>}
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Next Button */}
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
-              >
-                التالي →
-              </button>
+                return (
+                  <button
+                    key={pageToShow}
+                    onClick={() => handlePageChange(pageToShow)}
+                    className={`px-3 py-1.5 text-sm rounded-md min-w-[32px] transition-all duration-200 ${
+                      isCurrentPage
+                        ? 'bg-teal-600 text-white font-medium shadow-sm'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {pageToShow}
+                  </button>
+                );
+              })}
             </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-all duration-200 hover:shadow-md"
+            >
+              <span>التالي →</span>
+            </button>
           </div>
         </div>
       )}
@@ -316,6 +285,10 @@ export default function DegreesManagement() {
         isOpen={activeModal === "delete"}
         onClose={closeModal}
         onConfirm={handleDeleteDegree}
+        onSuccess={async () => {
+          await loadDegrees();
+          closeModal();
+        }}
         degree={selectedDegree}
         loading={saving}
       />

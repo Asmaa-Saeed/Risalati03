@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, BookOpenText, Layers3, Building2 } from "lucide-react";
-import Toast from "@/app/Component/Toast";
-import { Course, CoursesService, CreateCourseData } from "@/lib/courses";
+import { Loader2, BookOpenText, Layers3, Building2, Plus } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { Course, CoursesService, CreateCourseData, UpdateCourseData } from "@/lib/courses";
 import { getAllCourses } from "@/actions/courseActions";
 import CoursesTable from "./CoursesTable";
 import DeleteCourseConfirmModal from "./modals/DeleteCourseConfirmModal";
+// Removed unused imports
 
 // Mirrors InstructorsManagement, adapted for courses
 
@@ -18,13 +19,11 @@ export default function CoursesManagement() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [showToast, setShowToast] = useState(false);
 
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     loadCourses();
@@ -37,12 +36,25 @@ export default function CoursesManagement() {
       if (response.success) {
         setCourses(response.data);
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في تحميل البيانات" });
-        setShowToast(true);
+        throw new Error(response.message || "حدث خطأ في تحميل البيانات");
       }
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في تحميل البيانات" });
-      setShowToast(true);
+      console.error("Error loading courses:", error);
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تحميل البيانات';
+      toast.error(`❌ ${errorMessage}`, {
+        duration: 4000,
+        position: 'top-center',
+        style: {
+          backgroundColor: '#fef2f2',
+          border: '1px solid #ef4444',
+          padding: '16px',
+          color: '#991b1b',
+          fontFamily: 'Tajawal, sans-serif',
+          textAlign: 'right',
+          direction: 'rtl'
+        },
+        icon: '❌',
+      });
     } finally {
       setLoading(false);
     }
@@ -54,15 +66,53 @@ export default function CoursesManagement() {
       const response = await CoursesService.createCourse(data);
       if (response.success) {
         await loadCourses();
-        setMessage({ type: "success", text: response.message || "تمت الإضافة بنجاح" });
+        toast.success(response.message || "✅ تمت إضافة المقرر بنجاح", {
+          duration: 3000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #10b981',
+            padding: '16px',
+            color: '#065f46',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '✅',
+        });
         closeModal();
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في الإضافة" });
+        toast.error(response.message || "❌ حدث خطأ في إضافة المقرر", {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #ef4444',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '❌',
+        });
       }
-      setShowToast(true);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في الإضافة" });
-      setShowToast(true);
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
+      toast.error(`❌ ${errorMessage}`, {
+        duration: 4000,
+        position: 'top-center',
+        style: {
+          backgroundColor: '#fef2f2',
+          border: '1px solid #ef4444',
+          padding: '16px',
+          color: '#991b1b',
+          fontFamily: 'Tajawal, sans-serif',
+          textAlign: 'right',
+          direction: 'rtl'
+        },
+        icon: '❌',
+      });
     } finally {
       setSaving(false);
     }
@@ -70,18 +120,17 @@ export default function CoursesManagement() {
 
   // Edits are now handled in a dedicated page: /Settings/Courses/Edit/[id]
 
-  const handleDeleteCourse = async () => {
-    if (!selectedCourse) return;
-    setSaving(true);
+  const handleDeleteCourse = async (id: string): Promise<{ success: boolean; message?: string }> => {
     try {
+      setSaving(true);
       // Resolve backend expected id (some backends require numeric CourseId). Try to map via actions if needed.
-      let deleteId = selectedCourse.id;
+      let deleteId = id;
       try {
         const alt = await getAllCourses();
         if (alt.success && Array.isArray(alt.data)) {
           const match = alt.data.find((d: any) => {
             const cand = [d?.id, d?.Id, d?.courseId, d?.CourseId, d?.code, d?.Code].map((v: any) => (v != null ? String(v) : ""));
-            return cand.includes(String(selectedCourse.id)) || cand.includes(String(selectedCourse.code));
+            return cand.includes(String(id)) || (selectedCourse && cand.includes(String(selectedCourse.code)));
           });
           if (match) deleteId = String((match as any).id ?? (match as any).courseId ?? deleteId);
         }
@@ -90,14 +139,23 @@ export default function CoursesManagement() {
       const response = await CoursesService.deleteCourse(deleteId);
       if (response.success) {
         await loadCourses();
-        setMessage({ type: "success", text: response.message || "تم الحذف" });
+        return { 
+          success: true, 
+          message: response.message || "✅ تم حذف المقرر بنجاح" 
+        };
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في الحذف" });
+        return { 
+          success: false, 
+          message: response.message || "❌ حدث خطأ في حذف المقرر" 
+        };
       }
-      setShowToast(true);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في الحذف" });
-      setShowToast(true);
+      console.error("❌ Error deleting course:", error);
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
+      return { 
+        success: false, 
+        message: errorMessage 
+      };
     } finally {
       setSaving(false);
     }
@@ -149,15 +207,6 @@ export default function CoursesManagement() {
         <p className="text-gray-600">إدارة وتنظيم المقررات في النظام الأكاديمي</p>
       </div>
 
-      {/* Toast for backend messages */}
-      <Toast
-        show={Boolean(message) && showToast}
-        type={message?.type === "success" ? "success" : "error"}
-        message={message?.text || ""}
-        duration={3500}
-        onClose={() => { setShowToast(false); setMessage(null); }}
-        position="top-center"
-      />
 
       {/* Simple Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -286,7 +335,16 @@ export default function CoursesManagement() {
       )}
 
       {/* Modals */}
-      <DeleteCourseConfirmModal isOpen={activeModal === "delete"} onClose={closeModal} onConfirm={handleDeleteCourse} course={selectedCourse} loading={saving} />
+      <DeleteCourseConfirmModal
+        isOpen={activeModal === "delete"}
+        onClose={closeModal}
+        onConfirm={handleDeleteCourse}
+        course={selectedCourse}
+        loading={saving}
+        onSuccess={() => {
+          closeModal();
+        }}
+      />
     </div>
   );
 }

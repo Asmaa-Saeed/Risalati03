@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle, AlertTriangle, Loader2, Users, Building2, GraduationCap } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { College, CollegesService, CreateCollegeData, UpdateCollegeData } from "@/lib/colleges";
 import CollegesTable from "./CollegesTable";
 import AddCollegeModal from "./AddCollegeModal";
@@ -15,8 +16,6 @@ export default function CollegesManagement() {
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
   // Modal states
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedCollege, setSelectedCollege] = useState<College | null>(null);
@@ -38,73 +37,73 @@ export default function CollegesManagement() {
       if (response.success) {
         setColleges(response.data);
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في تحميل البيانات" });
+        toast.error(response.message || "حدث خطأ في تحميل البيانات");
       }
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في تحميل البيانات" });
+      console.error("❌ Error loading colleges:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في تحميل البيانات";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddCollege = async (collegeData: CreateCollegeData) => {
-    console.log("🏫 CollegesManagement - handleAddCollege called with:", collegeData);
     setSaving(true);
     try {
       const response = await CollegesService.createCollege(collegeData);
-      if (response.success && response.data) {
+
+      if (response.success) {
         await loadColleges();
-        setMessage({ type: "success", text: response.message! });
+        toast.success(response.message || "تمت إضافة الكلية بنجاح 🎉");
+        closeModal();
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في إضافة الكلية" });
+        toast.error(response.message || "حدث خطأ أثناء إضافة الكلية");
       }
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في إضافة الكلية" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error adding college:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الكلية";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
   };
 
   const handleEditCollege = async (collegeData: UpdateCollegeData) => {
-    console.log("🏫 CollegesManagement - handleEditCollege called with:", collegeData);
     setSaving(true);
     try {
       const response = await CollegesService.updateCollege(collegeData);
-      if (response.success && response.data) {
+
+      if (response.success) {
         await loadColleges();
-        setMessage({ type: "success", text: response.message! });
+        toast.success(response.message || "تم تحديث الكلية بنجاح 🎉");
+        closeModal();
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في تحديث الكلية" });
+        toast.error(response.message || "حدث خطأ أثناء تحديث الكلية");
       }
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في تحديث الكلية" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error updating college:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث الكلية";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteCollege = async () => {
-    if (!selectedCollege) return;
-
-    console.log("🏫 CollegesManagement - handleDeleteCollege called with college:", selectedCollege);
-    setSaving(true);
+  const handleDeleteCollege = async (id: number): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await CollegesService.deleteCollege(selectedCollege.id);
-      console.log("🏫 CollegesManagement - delete response:", response);
-      if (response.success) {
-        await loadColleges();
-        setMessage({ type: "success", text: response.message! });
-      } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في حذف الكلية" });
-      }
-      setTimeout(() => setMessage(null), 3000);
+      setSaving(true);
+      const result = await CollegesService.deleteCollege(id);
+      return { 
+        success: result.success, 
+        message: result.message
+      };
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في حذف الكلية" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error deleting college:", error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الكلية" 
+      };
     } finally {
       setSaving(false);
     }
@@ -165,22 +164,6 @@ export default function CollegesManagement() {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">إدارة الكليات</h2>
         <p className="text-gray-600">إدارة وتنظيم جميع الكليات في النظام الأكاديمي</p>
       </div>
-
-      {/* Message Alert */}
-      {message && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${
-          message.type === "success"
-            ? "bg-green-50 text-green-800 border border-green-200"
-            : "bg-red-50 text-red-800 border border-red-200"
-        }`}>
-          {message.type === "success" ? (
-            <CheckCircle size={20} />
-          ) : (
-            <AlertTriangle size={20} />
-          )}
-          <span>{message.text}</span>
-        </div>
-      )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -351,9 +334,24 @@ export default function CollegesManagement() {
       <DeleteCollegeConfirmModal
         isOpen={activeModal === "delete"}
         onClose={closeModal}
-        onConfirm={handleDeleteCollege}
+        onConfirm={async (id) => {
+          try {
+            const result = await handleDeleteCollege(id);
+            if (result?.success) {
+              await loadColleges();
+              closeModal();
+            }
+            return result || { success: false, message: "حدث خطأ غير متوقع" };
+          } catch (error) {
+            console.error("Error in delete confirmation:", error);
+            return { success: false, message: "حدث خطأ أثناء محاولة الحذف" };
+          }
+        }}
         college={selectedCollege}
         loading={saving}
+        onSuccess={() => {
+          // Success notification is handled in the DeleteCollegeConfirmModal component
+        }}
       />
     </div>
   );

@@ -2,21 +2,87 @@
 
 import { X, Trash2, AlertTriangle } from "lucide-react";
 import { Course } from "@/lib/courses";
+import { toast } from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (id: string) => Promise<{ success: boolean; message?: string }>;
   course: Course | null;
   loading?: boolean;
+  onSuccess?: () => void;
 }
 
-export default function DeleteCourseConfirmModal({ isOpen, onClose, onConfirm, course, loading = false }: Props) {
+export default function DeleteCourseConfirmModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  course, 
+  loading = false,
+  onSuccess
+}: Props) {
   if (!isOpen || !course) return null;
 
   const handleConfirm = async () => {
-    await onConfirm();
-    onClose();
+    if (!course) return;
+    
+    try {
+      const result = await onConfirm(course.id);
+      
+      if (result.success) {
+        toast.success(result.message || "✅ تم حذف المقرر بنجاح", {
+          duration: 3000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #10b981',
+            padding: '16px',
+            color: '#065f46',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '✅',
+        });
+        
+        onSuccess?.();
+      } else {
+        toast.error(result.message || "❌ حدث خطأ في حذف المقرر", {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #ef4444',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '❌',
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
+      toast.error(`❌ ${errorMessage}`, {
+        duration: 4000,
+        position: 'top-center',
+        style: {
+          backgroundColor: '#fef2f2',
+          border: '1px solid #ef4444',
+          padding: '16px',
+          color: '#991b1b',
+          fontFamily: 'Tajawal, sans-serif',
+          textAlign: 'right',
+          direction: 'rtl'
+        },
+        icon: '❌',
+      });
+    } finally {
+      if (!loading) {
+        onClose();
+      }
+    }
   };
 
   return (

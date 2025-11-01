@@ -22,7 +22,6 @@ export default function UniversitiesManagement() {
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Modal states
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -45,67 +44,91 @@ export default function UniversitiesManagement() {
       const result = await getUniversities(token || "");
 
       if (result.success && result.data) {
-        // The API returns objects with id and name, not just names
         setUniversities(result.data);
       } else {
-        setMessage({ type: "error", text: result.message || "حدث خطأ في تحميل البيانات" });
+        toast.error(result.message || "حدث خطأ في تحميل البيانات");
       }
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في تحميل البيانات" });
+      console.error("❌ Error loading universities:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في تحميل البيانات";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-const handleAddUniversity = async (data: { name: string }) => {
-  setSaving(true);
-  try {
-    // Get token from localStorage
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const handleAddUniversity = async (data: { name: string }) => {
+    setSaving(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const result = await addUniversity(data.name, token || "");
 
-    const result = await addUniversity(data.name, token || "");
-
-    if (result.success) {
-      await loadUniversities(); // عشان يجيب الجامعات من الباك
-      setMessage({ type: "success", text: "تمت إضافة الجامعة بنجاح 🎉" });
-    } else {
-      setMessage({ type: "error", text: result.message || "حدث خطأ أثناء الإضافة" });
+      if (result.success) {
+        await loadUniversities();
+        toast.success(result.message || "تمت إضافة الجامعة بنجاح 🎉");
+        closeModal();
+      } else {
+        toast.error(result.message || "حدث خطأ أثناء إضافة الجامعة");
+      }
+    } catch (error) {
+      console.error("❌ Error adding university:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الجامعة";
+      toast.error(errorMessage);
+    } finally {
+      setSaving(false);
     }
-  } catch (error) {
-    setMessage({ type: "error", text: "حدث خطأ أثناء إضافة الجامعة" });
-  } finally {
-    setSaving(false);
-    setTimeout(() => setMessage(null), 3000);
-  }
-};
+  };
 
 
- const handleUpdateUniversity = async (data: { id: number; name: string }) => {
-  setSaving(true);
-  try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const result = await updateUniversity(data.id, data.name, token || "");
+  const handleUpdateUniversity = async (data: { id: number; name: string }) => {
+    setSaving(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const result = await updateUniversity(data.id, data.name, token || "");
 
-    if (result.success) {
-      await loadUniversities();
-      setMessage({ type: "success", text: "✅ تم تحديث الجامعة بنجاح" });
-    } else {
-      setMessage({ type: "error", text: result.message || "حدث خطأ أثناء التحديث" });
+      if (result.success) {
+        await loadUniversities();
+        toast.success(result.message || "✅ تم تحديث الجامعة بنجاح");
+        closeModal();
+      } else {
+        toast.error(result.message || "حدث خطأ أثناء تحديث الجامعة");
+      }
+    } catch (error) {
+      console.error("❌ Error updating university:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث الجامعة";
+      toast.error(errorMessage);
+    } finally {
+      setSaving(false);
     }
-  } catch {
-    setMessage({ type: "error", text: "حدث خطأ أثناء تحديث الجامعة" });
-  } finally {
-    setSaving(false);
-    closeModal();
-    setTimeout(() => setMessage(null), 3000);
-  }
-};
+  };
 
 
-const handleDeleteUniversity = async (id: number) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  return await deleteUniversity(id, token || "");
-};
+  const handleDeleteUniversity = async (id: number): Promise<{ success: boolean; message?: string; data?: any }> => {
+    try {
+      setSaving(true);
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+      
+      const result = await deleteUniversity(id, token);
+      
+      // Don't show toast here, let the DeleteUniversityConfirmModal handle it
+      return { 
+        success: result.success, 
+        message: result.message,
+        data: result.data 
+      };
+    } catch (error) {
+      console.error("❌ Error deleting university:", error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الجامعة" 
+      };
+    } finally {
+      setSaving(false);
+    }
+  };
  
 
   const openModal = (type: ModalType, university?: University) => {
@@ -148,20 +171,6 @@ const handleDeleteUniversity = async (id: number) => {
       </div>
 
       {/* Message Alert */}
-      {message && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${
-          message.type === "success"
-            ? "bg-green-50 text-green-800 border border-green-200"
-            : "bg-red-50 text-red-800 border border-red-200"
-        }`}>
-          {message.type === "success" ? (
-            <CheckCircle size={20} />
-          ) : (
-            <AlertTriangle size={20} />
-          )}
-          <span>{message.text}</span>
-        </div>
-      )}
 
       {/* Data Table */}
       <UniversitiesTable
@@ -256,13 +265,6 @@ const handleDeleteUniversity = async (id: number) => {
         loading={saving}
       />
 
-      {/* <AddUniversityModal
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  onSubmit={handleAddUniversity}
-/> */}
-
-
       <EditUniversityModal
         isOpen={activeModal === "edit"}
         onClose={closeModal}
@@ -271,19 +273,28 @@ const handleDeleteUniversity = async (id: number) => {
         loading={saving}
       />
 
-     <DeleteUniversityConfirmModal
-  isOpen={activeModal === "delete"}
-  onClose={closeModal}
-  onConfirm={handleDeleteUniversity} // المودال هيمرر id تلقائياً
-  university={selectedUniversity}   // صححت الاسم
-  loading={saving}
-  onSuccess={() => {
-    // تحديث قائمة الجامعات بعد الحذف
-    if (selectedUniversity) {
-      setUniversities(prev => prev.filter(u => u.id !== selectedUniversity.id));
-    }
-  }}
-/>
+      <DeleteUniversityConfirmModal
+        isOpen={activeModal === "delete"}
+        onClose={closeModal}
+        onConfirm={async (id) => {
+          try {
+            const result = await handleDeleteUniversity(id);
+            if (result?.success) {
+              await loadUniversities();
+              closeModal();
+            }
+            return result || { success: false, message: "حدث خطأ غير متوقع" };
+          } catch (error) {
+            console.error("Error in delete confirmation:", error);
+            return { success: false, message: "حدث خطأ أثناء محاولة الحذف" };
+          }
+        }}
+        university={selectedUniversity}
+        loading={saving}
+        onSuccess={() => {
+          // Success notification is handled in the DeleteUniversityConfirmModal component
+        }}
+      />
 
     </div>
   );

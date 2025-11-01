@@ -301,20 +301,6 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
         )}
       </div>
 
-      {/* Results Info */}
-      <div className="text-sm text-gray-500 text-right">
-        <div className="font-medium">عرض {table.getFilteredRowModel().rows.length} من {degrees.length} درجة علمية</div>
-        {degrees.length > 10 && (
-          <div className="text-xs text-gray-400 mt-1">
-            📄 البيانات مقسمة على {Math.ceil(degrees.length / 10)} صفحة لتسهيل التصفح
-          </div>
-        )}
-        {degrees.length <= 10 && degrees.length > 0 && (
-          <div className="text-xs text-green-600 mt-1">
-            ✅ جميع الدرجات معروضة في صفحة واحدة
-          </div>
-        )}
-      </div>
     </div>
   );
 }

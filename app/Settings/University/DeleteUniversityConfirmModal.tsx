@@ -36,25 +36,26 @@ export default function DeleteUniversityConfirmModal({
   }, [isOpen]);
 
   const handleConfirm = async () => {
-  if (!university) return;
+    if (!university) return;
 
-  try {
-    const result = await onConfirm(university.id);
+    try {
+      const result = await onConfirm(university.id);
 
-    if (result.success) {
-      toast.success(result.message || "✅ تم حذف الجامعة بنجاح");
-      onSuccess?.();
+      if (result.success) {
+        // Show success toast matching the add/edit style
+        toast.success(result.message || "تم حذف الجامعة بنجاح 🎉");
+        onSuccess?.();
+        onClose();
+      } else {
+        toast.error(result.message || "حدث خطأ أثناء حذف الجامعة");
+      }
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+      toast.error(errorMessage);
       onClose();
-    } else {
-      toast.error(result.message || "❌ حدث خطأ أثناء الحذف");
     }
-  } catch (error) {
-    // Fix TypeScript error by properly checking if error is an Error instance
-    const errorMessage = error instanceof Error ? error.message : "❌ حدث خطأ غير متوقع";
-    toast.error(errorMessage);
-    onClose();
-  }
-};
+  };
 
   if (!isVisible) return null;
 
@@ -106,7 +107,7 @@ export default function DeleteUniversityConfirmModal({
             <div className="text-sm">
               <div className="font-medium text-gray-900 mb-1">معلومات الجامعة:</div>
               <div className="text-gray-700">{university?.name}</div>
-              <div className="text-gray-500 text-xs mt-1">الرقم التعريفي: {university?.id}</div>
+              {/* <div className="text-gray-500 text-xs mt-1">الرقم التعريفي: {university?.id}</div> */}
             </div>
           </div>
 

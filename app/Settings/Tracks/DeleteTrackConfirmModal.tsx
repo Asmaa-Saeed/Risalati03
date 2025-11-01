@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { Track } from "@/lib/tracks";
 
 interface DeleteTrackConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
-  track?: Track | null;
+  onConfirm: (id: number) => Promise<{ success: boolean; message?: string }>;
+  track: Track | null;
   loading?: boolean;
+  onSuccess?: () => void;
 }
 
 export default function DeleteTrackConfirmModal({
@@ -17,7 +19,8 @@ export default function DeleteTrackConfirmModal({
   onClose,
   onConfirm,
   track,
-  loading = false
+  loading = false,
+  onSuccess
 }: DeleteTrackConfirmModalProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -35,11 +38,20 @@ export default function DeleteTrackConfirmModal({
     if (!track) return;
 
     try {
-      await onConfirm();
+      const result = await onConfirm(track.id);
+
+      if (result.success) {
+        // Show success toast matching the add/edit style
+        toast.success(result.message || "تم حذف المسار الدراسي بنجاح 🎉");
+        onSuccess?.();
+        onClose();
+      } else {
+        toast.error(result.message || "حدث خطأ أثناء حذف المسار الدراسي");
+      }
     } catch (error) {
-      // Error handling is now done in the management component
-      console.error("Delete track error:", error);
-    } finally {
+      console.error("Error in delete confirmation:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+      toast.error(errorMessage);
       onClose();
     }
   };

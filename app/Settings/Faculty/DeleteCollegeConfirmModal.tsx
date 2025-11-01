@@ -1,26 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import { X, Trash2, AlertTriangle } from "lucide-react";
 import { College } from "@/lib/colleges";
 
 interface DeleteCollegeConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (id: number) => Promise<{ success: boolean; message?: string; data?: any }>;
   college: College | null;
   loading?: boolean;
+  onSuccess?: () => void;
 }
 
-export default function DeleteCollegeConfirmModal({ isOpen, onClose, onConfirm, college, loading = false }: DeleteCollegeConfirmModalProps) {
-  if (!isOpen || !college) return null;
+export default function DeleteCollegeConfirmModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  college, 
+  loading = false,
+  onSuccess 
+}: DeleteCollegeConfirmModalProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+    } else {
+      // Delay hiding to allow exit animation
+      const timer = setTimeout(() => setIsVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!isVisible || !college) return null;
 
   const handleConfirm = async () => {
+    if (!college) return;
+
     try {
-      await onConfirm();
-      onClose();
+      const result = await onConfirm(college.id);
+
+      if (result.success) {
+        // Show success toast matching the add/edit style
+        toast.success(result.message || "تم حذف الكلية بنجاح 🎉");
+        onSuccess?.();
+        onClose();
+      } else {
+        toast.error(result.message || "حدث خطأ أثناء حذف الكلية");
+      }
     } catch (error) {
-      // Error handling is done in parent component
+      console.error("Error in delete confirmation:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+      toast.error(errorMessage);
+      onClose();
     }
   };
 

@@ -116,13 +116,14 @@ export default function DegreesManagement() {
         // Refresh the degrees list from the server
         await loadDegrees();
         setMessage({ type: "success", text: response.message! });
+        setTimeout(() => setMessage(null), 3000);
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في حذف الدرجة العلمية" });
+        // If there's a specific error message from the server, throw it
+        throw new Error(response.message || "حدث خطأ في حذف الدرجة العلمية");
       }
-      setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في حذف الدرجة العلمية" });
-      setTimeout(() => setMessage(null), 3000);
+    } catch (error: any) {
+      // Re-throw the error to be caught by the modal
+      throw error;
     } finally {
       setSaving(false);
     }

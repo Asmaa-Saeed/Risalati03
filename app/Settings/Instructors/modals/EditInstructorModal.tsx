@@ -13,7 +13,7 @@ import { AcademicTitlesService, type AcademicTitle } from "@/lib/academic-titles
 const schema = z.object({
   id: z.string().min(1),
   name: z.string().min(1, "الاسم مطلوب"),
-  academicTitle: z.number().int().min(1, "اللقب الأكاديمي مطلوب"),
+  academicTitle: z.number().int().min(1, "المسمي الوظيفي مطلوب"),
   departmentId: z.number().int().min(1, "القسم مطلوب"),
   phone: z.string().min(5, "رقم الهاتف غير صالح"),
   email: z.string().email("البريد الإلكتروني غير صالح"),
@@ -96,9 +96,9 @@ export default function EditInstructorModal({ isOpen, onClose, onSubmit, instruc
               <input value={instructor.nationalId} readOnly disabled type="text" className="w-full px-5 py-3 border-2 rounded-xl bg-gray-50 text-gray-700 border-gray-200" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">اللقب الأكاديمي *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">المسمي الوظيفي *</label>
               <select {...register("academicTitle", { valueAsNumber: true })} className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.academicTitle ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}>
-                <option value={0}>اختر اللقب</option>
+                <option value={0}>اختر المسمي الوظيفي</option>
                 {academicTitles.map((t) => (
                   <option key={t.id} value={t.id}>{t.value}</option>
                 ))}

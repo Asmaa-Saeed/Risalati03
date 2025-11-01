@@ -12,7 +12,7 @@ import { AcademicTitlesService, type AcademicTitle } from "@/lib/academic-titles
 const schema = z.object({
   name: z.string().min(1, "الاسم مطلوب"),
   // AcademicTitle should be selected as ID (number)
-  academicTitle: z.number().int().min(1, "اللقب الأكاديمي مطلوب"),
+  academicTitle: z.number().int().min(1, "المسمى الوظيفي مطلوب"),
   nationalId: z
     .string()
     .regex(/^[0-9]{14}$/, "الرقم القومي يجب أن يكون 14 رقمًا"),
@@ -103,9 +103,9 @@ export default function AddInstructorModal({ isOpen, onClose, onSubmit, loading 
               {errors.nationalId && <p className="mt-2 text-sm text-red-600">{errors.nationalId.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">اللقب الأكاديمي *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">المسمى الوظيفي *</label>
               <select {...register("academicTitle", { valueAsNumber: true })} className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.academicTitle ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}>
-                <option value={0}>اختر اللقب</option>
+                <option value={0}>اختر المسمى الوظيفي</option>
                 {academicTitles.map((t) => (
                   <option key={t.id} value={t.id}>{t.value}</option>
                 ))}

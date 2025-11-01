@@ -236,14 +236,14 @@ export class DepartmentsService {
 
       const response = await createDepartment(apiData, token);
 
-      if (response.success && response.data) {
-        // Transform API response to match our interface
+      if (response.success) {
+        // ✅ نستخدم البيانات من departmentData علشان نبني Department object
         const newDepartment: Department = {
-          id: response.data.id.toString(),
+          id: response.data?.id?.toString() || departmentData.departmentId,
           departmentId: departmentData.departmentId,
-          name: response.data.name,
-          description: response.data.description || '',
-          programId: response.data.programId.toString(),
+          name: response.data?.name || departmentData.name,
+          description: response.data?.description || departmentData.description,
+          programId: response.data?.programId?.toString() || departmentData.programId,
           programName: departmentData.programName,
           collegeId: departmentData.collegeId,
           collegeName: departmentData.collegeName,

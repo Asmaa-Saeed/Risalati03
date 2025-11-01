@@ -236,12 +236,14 @@ export default function CollegesManagement() {
       {/* Data Table */}
       <CollegesTable
         colleges={currentColleges}
-        onEdit={(college) => openModal("edit", college)}
-        onDelete={(college) => openModal("delete", college)}
-        onView={(college) => openModal("view", college)}
-        onAdd={() => openModal("add")}
+        onEdit={(college) => openModal('edit', college)}
+        onDelete={(college) => openModal('delete', college)}
+        onView={(college) => openModal('view', college)}
+        onAdd={() => openModal('add')}
         searchQuery={searchQuery}
         onSearch={handleSearch}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
       />
 
       {/* Simple Results Info */}

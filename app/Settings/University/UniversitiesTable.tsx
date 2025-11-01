@@ -21,6 +21,8 @@ interface UniversitiesTableProps {
   onDelete: (university: University) => void;
   onView?: (university: University) => void;
   onAdd: () => void;
+  currentPage?: number;
+  itemsPerPage?: number;
 }
 
 export default function UniversitiesTable({
@@ -29,6 +31,8 @@ export default function UniversitiesTable({
   onDelete,
   onView,
   onAdd,
+  currentPage = 1,
+  itemsPerPage = 10,
 }: UniversitiesTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -40,13 +44,16 @@ export default function UniversitiesTable({
       {
         id: "id",
         header: "#",
-        cell: ({ row }: CellContext<University, unknown>) => (
-          <div className="text-center">
-            <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-              {row.original.id}
-            </span>
-          </div>
-        ),
+        cell: ({ row }: { row: { index: number } }) => {
+          const sequentialNumber = ((currentPage || 1) - 1) * (itemsPerPage || 10) + row.index + 1;
+          return (
+            <div className="text-center">
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                {sequentialNumber}
+              </span>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "name",
@@ -214,11 +221,6 @@ export default function UniversitiesTable({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Results Info */}
-      <div className="text-sm text-gray-500 text-right">
-        عرض {table.getFilteredRowModel().rows.length} من {universities.length} جامعة
       </div>
     </div>
   );

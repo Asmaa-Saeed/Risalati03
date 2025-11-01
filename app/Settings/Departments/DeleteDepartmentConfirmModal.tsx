@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
-import toast from "react-hot-toast";
 import { Department } from "@/lib/departments";
 
 interface DeleteDepartmentConfirmModalProps {
@@ -35,15 +34,8 @@ export default function DeleteDepartmentConfirmModal({
   const handleConfirm = async () => {
     if (!department) return;
 
-    try {
-      await onConfirm();
-    } catch (error) {
-      // Fix TypeScript error by properly checking if error is an Error instance
-      const errorMessage = error instanceof Error ? error.message : "❌ حدث خطأ غير متوقع";
-      toast.error(errorMessage);
-    } finally {
-      onClose();
-    }
+    // This will be handled by the parent component (DepartmentsManagement)
+    await onConfirm();
   };
 
   if (!isVisible) return null;

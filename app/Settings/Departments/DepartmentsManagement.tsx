@@ -96,17 +96,18 @@ export default function DepartmentsManagement() {
       if (response.success && response.data) {
         await loadDepartments();
         setCurrentPage(1);
-        setMessage({ type: "success", text: response.message! });
+        
+        // ✅ نعرض رسالة النجاح من الـ API
+        toast.success(response.message || "تم إضافة القسم بنجاح");
+        closeModal(); // نقفل المودال بعد النجاح
       } else {
-        setMessage({
-          type: "error",
-          text: response.message || "حدث خطأ في إضافة القسم",
-        });
+        // ✅ نعرض رسالة الخطأ من الـ API
+        toast.error(response.message || "حدث خطأ في إضافة القسم");
       }
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في إضافة القسم" });
-      setTimeout(() => setMessage(null), 3000);
+      console.error("❌ Error adding department:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في إضافة القسم";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -162,18 +163,18 @@ const handleDeleteDepartment = async () => {
     if (response.success) {
       await loadDepartments();
       setCurrentPage(1);
-      setMessage({ type: "success", text: response.message || "تم حذف القسم بنجاح" });
+      
+      // ✅ نعرض رسالة النجاح من الـ API
+      toast.success(response.message || "تم حذف القسم بنجاح");
+      closeModal(); // نقفل المودال بعد النجاح
     } else {
-      setMessage({
-        type: "error",
-        text: response.message || "حدث خطأ في حذف القسم",
-      });
+      // ✅ نعرض رسالة الخطأ من الـ API
+      toast.error(response.message || "حدث خطأ في حذف القسم");
     }
-
-    setTimeout(() => setMessage(null), 3000);
   } catch (error) {
-    setMessage({ type: "error", text: "حدث خطأ في حذف القسم" });
-    setTimeout(() => setMessage(null), 3000);
+    console.error("❌ Error deleting department:", error);
+    const errorMessage = error instanceof Error ? error.message : "حدث خطأ في حذف القسم";
+    toast.error(errorMessage);
   } finally {
     setSaving(false);
   }

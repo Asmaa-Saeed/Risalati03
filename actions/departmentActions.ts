@@ -212,6 +212,8 @@ export const createDepartment = async (
       return { success: false, message: "الرجاء تسجيل الدخول أولاً" };
     }
 
+    console.log("🔹 Sending data to API:", departmentData);
+    
     const response = await fetch(`${API_URL}/Departments`, {
       method: "POST",
       headers: {
@@ -225,17 +227,16 @@ export const createDepartment = async (
     const text = await response.text();
     console.log("🔹 Create Response body:", text);
 
-    if (!response.ok) {
-      throw new Error(
-        `❌ Failed to create department: ${response.status} ${response.statusText} | ${text}`
-      );
-    }
-
     let data: any;
     try {
       data = JSON.parse(text);
     } catch {
       data = text;
+    }
+
+    if (!response.ok) {
+      // ✅ نستخرج رسالة الخطأ من الـ API
+      return { success: false, message: data?.message || "فشل في إضافة القسم" };
     }
 
     if (data?.succeeded) {
@@ -284,17 +285,16 @@ export const updateDepartment = async (
     const text = await response.text();
     console.log("🔹 Update Response body:", text);
 
-    if (!response.ok) {
-      throw new Error(
-        `❌ Failed to update department: ${response.status} ${response.statusText} | ${text}`
-      );
-    }
-
     let data: any;
     try {
       data = JSON.parse(text);
     } catch {
       data = text;
+    }
+
+    if (!response.ok) {
+      // ✅ نستخرج رسالة الخطأ من الـ API
+      return { success: false, message: data?.message || "فشل في تحديث القسم" };
     }
 
     if (data?.succeeded) {
@@ -334,17 +334,16 @@ export const deleteDepartment = async (
     const text = await response.text();
     console.log("🔹 Delete Response body:", text);
 
-    if (!response.ok) {
-      throw new Error(
-        `❌ Failed to delete department: ${response.status} ${response.statusText} | ${text}`
-      );
-    }
-
     let data: any;
     try {
       data = JSON.parse(text);
     } catch {
       data = text;
+    }
+
+    if (!response.ok) {
+      // ✅ نستخرج رسالة الخطأ من الـ API
+      return { success: false, message: data?.message || "فشل في حذف القسم" };
     }
 
     if (data?.succeeded) {

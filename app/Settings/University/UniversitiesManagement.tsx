@@ -169,105 +169,81 @@ const handleDeleteUniversity = async (id: number) => {
         onEdit={(university) => openModal("edit", university)}
         onDelete={(university) => openModal("delete", university)}
         onAdd={() => openModal("add")}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
       />
 
-      {/* Pagination */}
+      {/* Pagination Controls - Centered */}
       {totalPages > 1 && (
-        <div className="space-y-4">
-          {/* Pagination Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-            <div className="text-sm text-blue-800">
-              <span className="font-medium">💡 نصيحة:</span> يمكنك التنقل بين الصفحات باستخدام الأزرار أو النقر مباشرة على رقم الصفحة المطلوبة
-            </div>
-          </div>
+        <div className="flex items-center justify-center mt-6">
+          <div className="flex items-center gap-2 bg-white shadow-sm border border-gray-200 rounded-xl p-2">
+            {/* Previous Button */}
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-all duration-200 hover:shadow-md"
+            >
+              <span>← السابق</span>
+            </button>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200">
-            {/* Page Info */}
-            <div className="text-sm text-gray-600 text-center sm:text-right">
-              <div className="font-medium">عرض {startIndex + 1}-{Math.min(endIndex, universities.length)} من {universities.length} جامعة</div>
-              <div className="text-xs text-gray-500 mt-1">الصفحة {currentPage} من {totalPages}</div>
-            </div>
-
-            {/* Pagination Controls */}
+            {/* Page Numbers */}
             <div className="flex items-center gap-2">
-              {/* Previous Button */}
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
-              >
-                ← السابق
-              </button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                // Show first page, last page, current page, and pages around current
+                let pageToShow;
+                if (totalPages <= 5) {
+                  // If 5 or fewer pages, show all
+                  pageToShow = i + 1;
+                } else if (currentPage <= 3) {
+                  // Near start
+                  pageToShow = i + 1;
+                  if (i === 4) pageToShow = totalPages;
+                } else if (currentPage >= totalPages - 2) {
+                  // Near end
+                  pageToShow = i === 0 ? 1 : totalPages - 4 + i;
+                } else {
+                  // Middle
+                  pageToShow = currentPage - 2 + i;
+                  if (i === 0) pageToShow = 1;
+                  if (i === 4) pageToShow = totalPages;
+                }
 
-              {/* Page Numbers */}
-              <div className="flex items-center gap-1">
-                {/* First page */}
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      1
-                    </button>
-                    {currentPage > 4 && <span className="px-2 text-gray-500">...</span>}
-                  </>
-                )}
+                const isCurrentPage = pageToShow === currentPage;
+                const isEllipsis = (i === 1 && pageToShow > 2 && currentPage > 3) || 
+                                (i === 3 && pageToShow < totalPages - 1 && currentPage < totalPages - 2);
 
-                {/* Current page range */}
-                {(() => {
-                  // Calculate the range of pages to show (max 5 pages)
-                  const maxPagesToShow = Math.min(5, totalPages);
-                  let startPage = Math.max(1, currentPage - 2);
+                if (isEllipsis) {
+                  return (
+                    <span key={`ellipsis-${i}`} className="px-3 py-2 text-gray-500">
+                      ...
+                    </span>
+                  );
+                }
 
-                  // Adjust start page if we're near the end
-                  if (startPage + maxPagesToShow - 1 > totalPages) {
-                    startPage = Math.max(1, totalPages - maxPagesToShow + 1);
-                  }
-
-                  return Array.from({ length: maxPagesToShow }, (_, i) => {
-                    const pageNumber = startPage + i;
-                    if (pageNumber > totalPages) return null;
-
-                    return (
-                      <button
-                        key={`page-${pageNumber}`}
-                        onClick={() => handlePageChange(pageNumber)}
-                        className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                          pageNumber === currentPage
-                            ? "text-white bg-teal-600 border border-teal-600 shadow-sm"
-                            : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        {pageNumber}
-                      </button>
-                    );
-                  }).filter(Boolean);
-                })()}
-
-                {/* Last page */}
-                {currentPage < totalPages - 2 && (
-                  <>
-                    {currentPage < totalPages - 3 && <span className="px-2 text-gray-500">...</span>}
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Next Button */}
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
-              >
-                التالي →
-              </button>
+                return (
+                  <button
+                    key={pageToShow}
+                    onClick={() => handlePageChange(pageToShow)}
+                    className={`px-3 py-2 text-sm font-medium rounded-md ${
+                      isCurrentPage
+                        ? "bg-teal-500 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {pageToShow}
+                  </button>
+                );
+              })}
             </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-all duration-200 hover:shadow-md"
+            >
+              <span>التالي →</span>
+            </button>
           </div>
         </div>
       )}

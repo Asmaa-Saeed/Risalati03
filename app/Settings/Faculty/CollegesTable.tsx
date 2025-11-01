@@ -10,6 +10,7 @@ import {
   flexRender,
   SortingState,
   ColumnFiltersState,
+  CellContext,
 } from "@tanstack/react-table";
 import { Search, Plus, Edit, Trash2, Eye, ChevronUp, ChevronDown } from "lucide-react";
 import { College } from "@/lib/colleges";
@@ -22,9 +23,21 @@ interface CollegesTableProps {
   onAdd: () => void;
   searchQuery?: string;
   onSearch?: (query: string) => void;
+  currentPage?: number;
+  itemsPerPage?: number;
 }
 
-export default function CollegesTable({ colleges, onEdit, onDelete, onView, onAdd, searchQuery = "", onSearch }: CollegesTableProps) {
+export default function CollegesTable({ 
+  colleges, 
+  onEdit, 
+  onDelete, 
+  onView, 
+  onAdd, 
+  searchQuery = "", 
+  onSearch, 
+  currentPage = 1, 
+  itemsPerPage = 10 
+}: CollegesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState(searchQuery);
@@ -41,29 +54,22 @@ export default function CollegesTable({ colleges, onEdit, onDelete, onView, onAd
   };
 
   const columns: ColumnDef<College>[] = [
-    {
-      id: "id",
-      header: ({ column }) => (
-        <button
-          className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          رقم الكلية
-          {column.getIsSorted() === "asc" ? (
-            <ChevronUp size={16} />
-          ) : column.getIsSorted() === "desc" ? (
-            <ChevronDown size={16} />
-          ) : null}
-        </button>
-      ),
-      cell: ({ row }) => (
-        <div className="text-center">
-          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-            {row.original.id}
-          </span>
-        </div>
-      ),
-    },
+   {
+           id: "id",
+           header: "رقم الكلية",
+           cell: ({ row }: { row: { index: number } }) => {
+             // Calculate the sequential number based on the current page and row index
+             const sequentialNumber = ((currentPage || 1) - 1) * (itemsPerPage || 10) + row.index + 1;
+             
+             return (
+               <div className="text-center">
+                 <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                   {sequentialNumber}
+                 </span>
+               </div>
+             );
+           },
+         },
     {
       accessorKey: "name",
       header: ({ column }) => (

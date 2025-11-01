@@ -39,7 +39,7 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
     resolver: zodResolver(degreeSchema),
     defaultValues: {
       standardDurationYears: null,
-      generalDegree: '0',
+      generalDegree: '',
     },
   });
 
@@ -68,9 +68,21 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
 
   if (!isOpen) return null;
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 transition-all duration-300 ${
+      isOpen ? 'opacity-100' : 'opacity-0'
+    }`}>
+      {/* Backdrop */}
+      <div className={`absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-all duration-300 ${
+        isOpen ? 'opacity-100' : 'opacity-0'
+      }`}></div>
+
+      {/* Modal Content */}
+      <div className={`bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-10 transform transition-all duration-300 ${
+        isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+      }`} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">إضافة درجة علمية جديدة</h2>
@@ -84,16 +96,16 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
 
         {/* Form */}
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {/* Degree Name */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 اسم الدرجة العلمية *
               </label>
               <input
                 {...register("name")}
                 type="text"
-                className={`w-full px-4 py-3  border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
                   errors.name ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="مثال: ماجستير العلوم في المحاسبة (عربي)"
@@ -104,14 +116,14 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
             </div>
 
             {/* Description */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 الوصف (اختياري)
               </label>
               <textarea
                 {...register("description")}
                 rows={3}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
                   errors.description ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="وصف الدرجة العلمية..."
@@ -128,7 +140,7 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
               </label>
               <select
                 {...register("departmentId", { valueAsNumber: true })}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
                   errors.departmentId ? "border-red-500" : "border-gray-300"
                 }`}
               >
@@ -157,7 +169,7 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
                 type="number"
                 min="1"
                 max="10"
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
                   errors.standardDurationYears ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="مثال: 2"
@@ -170,18 +182,16 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
             {/* General Degree Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                نوع الدرجة العلمية
+                الدرجة العامة *
               </label>
-              <select
+              <input
+                type="text"
                 {...register("generalDegree")}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
                   errors.generalDegree ? "border-red-500" : "border-gray-300"
                 }`}
-              >
-                <option value="">اختر نوع الدرجة</option>
-                <option value="1">البكالوريوس (درجة أساسية)</option>
-                <option value="0">الماجستير/الدكتوراه (درجة عليا)</option>
-              </select>
+                placeholder="أدخل نوع الدرجة العامة"
+              />
               {errors.generalDegree && (
                 <p className="mt-1 text-sm text-red-600">{errors.generalDegree.message}</p>
               )}

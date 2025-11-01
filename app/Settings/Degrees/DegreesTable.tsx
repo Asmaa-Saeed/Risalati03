@@ -32,17 +32,23 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
     {
       id: "serial",
       header: () => (
-        <div className="text-right font-semibold text-gray-900">الرقم</div>
+        <div className="text-center">
+          <span className="text-xs font-medium text-gray-900 uppercase tracking-wider">الرقم</span>
+        </div>
       ),
       cell: ({ row }) => (
-        <div className="font-medium text-gray-900">{row.index + 1}</div>
+        <div className="text-center">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+            {row.index + 1}
+          </span>
+        </div>
       ),
     },
     {
       accessorKey: "name",
       header: ({ column }) => (
         <button
-          className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+          className="flex items-center gap-2 text-center font-semibold text-gray-900 hover:text-teal-600 transition-colors"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           اسم الدرجة العلمية
@@ -65,7 +71,7 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
       accessorKey: "description",
       header: ({ column }) => (
         <button
-          className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+          className="flex items-center gap-2 text-center font-semibold text-gray-900 hover:text-teal-600 transition-colors"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           الوصف
@@ -86,7 +92,7 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
       accessorKey: "departmentId",
       header: ({ column }) => (
         <button
-          className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+          className="flex items-center gap-2 text-center font-semibold text-gray-900 hover:text-teal-600 transition-colors"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           القسم
@@ -100,7 +106,7 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
       cell: ({ row }) => (
         <div className="text-right">
           <div className="flex items-center gap-2">
-            <FolderOpen className="text-gray-400" size={16} />
+            {/* <FolderOpen className="text-gray-400" size={16} /> */}
             <span className="font-medium text-gray-900">
               {departmentsMap && departmentsMap[row.original.departmentId]
                 ? departmentsMap[row.original.departmentId]
@@ -114,7 +120,7 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
       accessorKey: "generalDegree",
       header: ({ column }) => (
         <button
-          className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+          className="flex items-center gap-2 text-center font-semibold text-gray-900 hover:text-teal-600 transition-colors"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           الدرجة العامة
@@ -137,7 +143,7 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
       accessorKey: "standardDurationYears",
       header: ({ column }) => (
         <button
-          className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+          className="flex items-center gap-2 text-center font-semibold text-gray-900 hover:text-teal-600 transition-colors"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           عدد سنوات الدراسة
@@ -151,7 +157,7 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
       cell: ({ row }) => (
         <div className="text-center">
           <div className="flex items-center justify-center gap-1">
-            <Clock className="text-gray-400" size={16} />
+            {/* <Clock className="text-gray-400" size={16} /> */}
             <span className="font-medium text-gray-900">
               {row.getValue("standardDurationYears")
                 ? `${row.getValue("standardDurationYears")} سنة`
@@ -163,30 +169,27 @@ export default function DegreesTable({ degrees, departmentsMap, onEdit, onDelete
     },
     {
       id: "actions",
-      header: "الإجراءات",
+      header: () => <div className="text-center w-full">الإجراءات</div>,
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={() => onView(row.original)}
-            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-            title="عرض التفاصيل"
-          >
-            <Eye size={16} />
-          </button>
-          <button
-            onClick={() => onEdit(row.original)}
-            className="p-2 text-teal-600 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-colors"
-            title="تعديل"
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={() => onDelete(row.original)}
-            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-            title="حذف"
-          >
-            <Trash2 size={16} />
-          </button>
+        <div className="flex flex-col items-center justify-center gap-2 py-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onEdit(row.original)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 border border-teal-200 text-teal-700 hover:bg-teal-100 hover:border-teal-300 rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+              title="تعديل"
+            >
+              <Edit size={16} />
+              تعديل
+            </button>
+            <button
+              onClick={() => onDelete(row.original)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300 rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+              title="حذف"
+            >
+              <Trash2 size={16} />
+              حذف
+            </button>
+          </div>
         </div>
       ),
     },

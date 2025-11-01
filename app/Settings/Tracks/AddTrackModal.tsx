@@ -223,27 +223,20 @@ export default function AddTrackModal({ isOpen, onClose, onSubmit, loading = fal
               )}
             </div>
 
-            {/* Track Name (from Lookup by Degree) */}
+            {/* Track Name Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 اسم المسار *
               </label>
-              <select
+              <input
                 {...register("name")}
+                type="text"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 ${
                   errors.name ? "border-red-500" : "border-gray-300"
                 }`}
-                disabled={!selectedDegreeId || loadingMsarat}
-              >
-                <option value="">
-                  {loadingMsarat ? "جاري تحميل أسماء المسارات..." : !selectedDegreeId ? "اختر الدرجة أولاً" : "اختر اسم المسار"}
-                </option>
-                {msarat.map((m) => (
-                  <option key={m.id} value={m.value}>
-                    {m.value}
-                  </option>
-                ))}
-              </select>
+                placeholder="أدخل اسم المسار"
+                disabled={loading}
+              />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
               )}

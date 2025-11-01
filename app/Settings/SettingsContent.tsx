@@ -299,8 +299,8 @@ export default function SettingsPage() {
   };
 
   const sections = [
-    { id: "profile", label: "الملف الشخصي", icon: <User size={20} /> },
-    { id: "account", label: "إدارة الحساب", icon: <UserCheck size={20} /> },
+    // { id: "profile", label: "الملف الشخصي", icon: <User size={20} /> },
+    // { id: "account", label: "إدارة الحساب", icon: <UserCheck size={20} /> },
     { id: "instructors", label: "أعضاء هيئة التدريس", icon: <Users size={20} /> },
     { id: "courses", label: "المقررات (المواد)", icon: <BookOpen size={20} /> },
     { id: "universities", label: "الجامعات", icon: <Building size={20} /> },
@@ -322,9 +322,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-custom-beige" dir="rtl">
+    <div className="flex flex-col h-screen bg-custom-beige overflow-hidden" dir="rtl">
       {/* Header */}
-      {/* <div className="bg-custom-sub-beige shadow-md">
+      <div className="bg-custom-sub-beige shadow-md flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-3">
@@ -339,72 +339,60 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
-      </div> */}
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Message Alert */}
-        {message && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-            message.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-red-50 text-red-800 border border-red-200"
-          }`}>
-            {message.type === "success" ? (
-              <CheckCircle size={20} />
-            ) : (
-              <AlertTriangle size={20} />
-            )}
-            <span>{message.text}</span>
-            {message.type === "error" && message.text.includes("تسجيل الدخول") && (
-              <button
-                onClick={() => router.push("/")}
-                className="mr-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
-              >
-                تسجيل الدخول
-              </button>
-            )}
-          </div>
-        )}
-
-        <div className="flex flex-col lg:flex-row min-h-screen">
-          {/* Fixed Sidebar Navigation */}
-          <div className="w-full lg:w-64 bg-custom-teal shadow-lg p-4 lg:fixed lg:right-0 lg:top-0 lg:h-full lg:overflow-y-auto">
-            <h2 className="text-white text-center text-2xl font-bold mb-6 px-4">إعدادات النظام</h2>
-            <nav className="space-y-1">
-              {sections.map((section) => (
+      <div className="flex-1 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full">
+          {/* Message Alert */}
+          {message && (
+            <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+              message.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}>
+              {message.type === "success" ? (
+                <CheckCircle size={20} />
+              ) : (
+                <AlertTriangle size={20} />
+              )}
+              <span>{message.text}</span>
+              {message.type === "error" && message.text.includes("تسجيل الدخول") && (
                 <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id as SettingsSection)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-colors ${
-                    activeSection === section.id
-                      ? "bg-teal-50 text-teal-700 border border-teal-200"
-                      : " hover:bg-white/10 text-white "
-                  }`}
+                  onClick={() => router.push("/")}
+                  className="mr-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
                 >
-                  {section.icon}
-                  <span className="font-medium">{section.label}</span>
+                  تسجيل الدخول
                 </button>
-              ))}
-            </nav>
-            
-           
-            {/* Back Button */}
-            <div className="mt-auto pt-6 border-t border-white/20">
-              <button
-                onClick={() => window.history.back()}
-                className="w-full flex items-center justify-center gap-2 cursor-pointer bg-teal-50 text-teal-700 px-4 py-3 rounded-lg font-medium transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                </svg>
-                <span>العودة للخلف</span>
-              </button>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* Main Content with offset for fixed sidebar */}
-          <div className="w-full lg:pr-64">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <div className="flex flex-col lg:flex-row h-full gap-6 overflow-hidden">
+            {/* Sidebar */}
+            <div className="lg:w-64 flex-shrink-0">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
+                <nav className="space-y-2">
+                  {sections.map((section) => (
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveSection(section.id as SettingsSection)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-right rounded-lg transition-colors text-sm ${
+                        activeSection === section.id
+                          ? "bg-teal-50 text-teal-700 border border-teal-200 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {section.icon}
+                      <span className="font-medium">{section.label}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            </div>
+            
+            {/* Main Content */}
+            <div className="flex-1 overflow-hidden">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
               {/* Profile Section */}
               {activeSection === "profile" && (
                 <div className="space-y-8">
@@ -642,6 +630,7 @@ export default function SettingsPage() {
               {activeSection === "tracks" && (
                 <TracksManagement />
               )}
+              </div>
             </div>
           </div>
         </div>

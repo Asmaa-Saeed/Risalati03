@@ -70,10 +70,10 @@ export default function DegreesManagement() {
     setSaving(true);
     try {
       const response = await DegreesService.createDegree(degreeData);
-      if (response.succeeded && response.data) {
-        setDegrees(prev => [...prev, response.data!]);
+      if (response.succeeded) {
+        // Refresh the degrees list from the server
+        await loadDegrees();
         setMessage({ type: "success", text: response.message! });
-        setCurrentPage(1); // Reset to first page after adding
       } else {
         setMessage({ type: "error", text: response.message || "حدث خطأ في إضافة الدرجة العلمية" });
       }
@@ -90,17 +90,10 @@ export default function DegreesManagement() {
     setSaving(true);
     try {
       const response = await DegreesService.updateDegree(degreeData);
-      if (response.succeeded && response.data) {
-        setDegrees(prev => prev.map(degree =>
-          degree.id === degreeData.id ? response.data! : degree
-        ));
+      if (response.succeeded) {
+        // Refresh the degrees list from the server
+        await loadDegrees();
         setMessage({ type: "success", text: response.message! });
-
-        // Adjust current page if necessary after edit
-        const newTotalPages = Math.ceil(degrees.length / itemsPerPage);
-        if (currentPage > newTotalPages) {
-          setCurrentPage(newTotalPages);
-        }
       } else {
         setMessage({ type: "error", text: response.message || "حدث خطأ في تحديث الدرجة العلمية" });
       }
@@ -120,16 +113,9 @@ export default function DegreesManagement() {
     try {
       const response = await DegreesService.deleteDegree(selectedDegree.id);
       if (response.succeeded) {
-        setDegrees(prev => prev.filter(degree => degree.id !== selectedDegree.id));
+        // Refresh the degrees list from the server
+        await loadDegrees();
         setMessage({ type: "success", text: response.message! });
-
-        // Adjust current page if necessary after deletion
-        const newTotalPages = Math.ceil((degrees.length - 1) / itemsPerPage);
-        if (currentPage > newTotalPages && newTotalPages > 0) {
-          setCurrentPage(newTotalPages);
-        } else if (newTotalPages === 0) {
-          setCurrentPage(1);
-        }
       } else {
         setMessage({ type: "error", text: response.message || "حدث خطأ في حذف الدرجة العلمية" });
       }

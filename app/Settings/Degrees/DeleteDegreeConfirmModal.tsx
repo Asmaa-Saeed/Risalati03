@@ -56,20 +56,7 @@ export default function DeleteDegreeConfirmModal(props: DeleteDegreeConfirmModal
             </h3>
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600 space-y-1">
-                <p><span className="font-medium">رقم الدرجة:</span> {degree.id}</p>
                 <p><span className="font-medium">اسم الدرجة:</span> {degree.name}</p>
-                <p><span className="font-medium">القسم:</span> قسم رقم {degree.departmentId}</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="flex items-center gap-1">
-                    <Clock size={14} />
-                    <span>{degree.standardDurationYears ? `${degree.standardDurationYears} سنة` : "غير محدد"}</span>
-                  </span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    degree.generalDegree === "1" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
-                  }`}>
-                    {degree.generalDegree === "1" ? "عام" : "متخصص"}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

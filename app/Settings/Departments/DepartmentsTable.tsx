@@ -70,7 +70,19 @@ export default function DepartmentsTable({
           </div>
         ),
       },
-      
+       {
+        accessorKey: "code",
+        header: ({ column }: HeaderContext<Department, unknown>) => (
+          <div className="text-right font-semibold text-gray-900">
+            الكود
+          </div>
+        ),
+        cell: ({ row }: CellContext<Department, unknown>) => (
+          <div className="text-right text-gray-900">
+            {row.original.code}
+          </div>
+        ),
+      },
      
       {
         accessorKey: "programName",
@@ -93,6 +105,7 @@ export default function DepartmentsTable({
           </div>
         ),
       },
+      
       {
         accessorKey: "description",
         header: ({ column }: HeaderContext<Department, unknown>) => (
@@ -114,19 +127,7 @@ export default function DepartmentsTable({
           </div>
         ),
       },
-       {
-        accessorKey: "code",
-        header: ({ column }: HeaderContext<Department, unknown>) => (
-          <div className="text-right font-semibold text-gray-900">
-            الكود
-          </div>
-        ),
-        cell: ({ row }: CellContext<Department, unknown>) => (
-          <div className="text-right text-gray-900">
-            {row.original.code}
-          </div>
-        ),
-      },
+      
       {
         id: "actions",
         header: "الإجراءات",

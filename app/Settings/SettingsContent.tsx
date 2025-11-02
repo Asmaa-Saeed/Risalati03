@@ -49,6 +49,7 @@ import DegreesManagement from "./Degrees/DegreesManagement";
 import UniversitiesManagement from "./University/UniversitiesManagement";
 import DepartmentsManagement from "./Departments/DepartmentsManagement";
 import TracksManagement from "./Tracks/TracksManagement";
+import IntakesManagement from "./Intakes/page";
 
 // Settings sections
 type SettingsSection =
@@ -61,7 +62,8 @@ type SettingsSection =
   | "colleges"
   | "departments"
   | "degrees"
-  | "tracks";
+  | "tracks"
+  | "intakes";
 
 // Mock user data type
 interface UserData {
@@ -308,6 +310,7 @@ export default function SettingsPage() {
     { id: "departments", label: "الاقسام", icon: <FolderOpen size={20} /> },
     { id: "degrees", label: "الدرجات العلمية", icon: <GraduationCap size={20} /> },
     { id: "tracks", label: "المسارات", icon: <Route size={20} /> },
+    { id: "intakes", label: "الاعوام الدراسية", icon: <Calendar size={20} /> },
   ];
 
   if (loading) {
@@ -540,6 +543,10 @@ export default function SettingsPage() {
               {/* Tracks Section */}
               {activeSection === "tracks" && (
                 <TracksManagement />
+              )}
+              {/* Intakes Section */}
+              {activeSection === "intakes" && (
+                <IntakesManagement />
               )}
               </div>
             </div>

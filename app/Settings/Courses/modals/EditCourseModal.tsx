@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "react-hot-toast";
 import * as z from "zod";
 import { X, Save, Loader2 } from "lucide-react";
 import { type UpdateCourseData, type Course } from "@/lib/courses";
@@ -129,8 +130,17 @@ export default function EditCourseModal({ isOpen, onClose, onSubmit, loading = f
     // Map form data to UpdateCourseData expected by API, injecting instructors from current course if available
     const payload: UpdateCourseData = {
       ...data,
+      id: course?.id || '', // Ensure id is always set
       instructors: (course?.instructors?.map(i => i.id) ?? []),
+      msarId: data.msarId || 0, // Ensure msarId is always a number
     };
+    
+    // Ensure all required fields are set
+    if (!payload.msarId) {
+      toast.error('يجب اختيار المسار');
+      return;
+    }
+    
     await onSubmit(payload);
   };
 

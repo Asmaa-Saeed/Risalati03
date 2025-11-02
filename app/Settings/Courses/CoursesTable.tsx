@@ -11,7 +11,7 @@ import {
   SortingState,
   ColumnFiltersState,
 } from "@tanstack/react-table";
-import { Search, Plus, Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Plus, Edit, Trash2, ChevronUp, ChevronDown, X, Users, User, List } from "lucide-react";
 import { type Course } from "@/lib/courses";
 import { SemestersService, type SemesterItem } from "@/lib/semesters";
 
@@ -27,11 +27,16 @@ interface CoursesTableProps {
 }
 
 export default function CoursesTable({ items, onEdit, onDelete, onAdd, searchQuery = "", onSearch, startIndex = 0 }: CoursesTableProps) {
+  const [showInstructorsPopup, setShowInstructorsPopup] = useState(false);
+  const [selectedInstructors, setSelectedInstructors] = useState<string[]>([]);
+  const [showPrerequisitesPopup, setShowPrerequisitesPopup] = useState(false);
+  const [selectedPrerequisites, setSelectedPrerequisites] = useState<string[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState(searchQuery);
   const [semesters, setSemesters] = useState<SemesterItem[]>([]);
   const [semMap, setSemMap] = useState<Record<number, string>>({});
+  const [showInstructors, setShowInstructors] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     setGlobalFilter(searchQuery);
@@ -62,7 +67,7 @@ export default function CoursesTable({ items, onEdit, onDelete, onAdd, searchQue
       enableSorting: false,
       header: () => (
         <button className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors" onClick={() => {}}>
-          مسلسل
+          الرقم
         </button>
       ),
       cell: ({ row }) => (
@@ -175,14 +180,46 @@ export default function CoursesTable({ items, onEdit, onDelete, onAdd, searchQue
         const items: string[] = Array.isArray(value)
           ? value.map((it: any) => (typeof it === "string" ? it : (it?.name ?? it?.Name ?? it?.code ?? it?.Code ?? "")).toString()).filter(Boolean)
           : [];
-        if (!items.length) return <div className="text-right text-gray-400 italic">None</div>;
+        
+        if (!items.length) {
+          return (
+            <div className="flex justify-end">
+              <button 
+                onClick={() => {
+                  setSelectedInstructors([]);
+                  setShowInstructorsPopup(true);
+                }}
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+              >
+                عرض المحاضرون
+              </button>
+            </div>
+          );
+        }
+        
         return (
-          <div className="flex flex-wrap gap-1 justify-end">
-            {items.map((txt, idx) => (
-              <span key={idx} className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                {txt}
-              </span>
-            ))}
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-wrap gap-1 justify-end">
+              {items.slice(0, 2).map((txt, idx) => (
+                <span key={idx} className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full">
+                  {txt}
+                </span>
+              ))}
+              {items.length > 2 && (
+                <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full">
+                  +{items.length - 2}
+                </span>
+              )}
+            </div>
+            <button 
+              onClick={() => {
+                setSelectedInstructors(items);
+                setShowInstructorsPopup(true);
+              }}
+              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-colors"
+            >
+              عرض الكل
+            </button>
           </div>
         );
       },
@@ -200,14 +237,42 @@ export default function CoursesTable({ items, onEdit, onDelete, onAdd, searchQue
         const items: string[] = Array.isArray(value)
           ? value.map((it: any) => (typeof it === "string" ? it : (it?.name ?? it?.Name ?? it?.code ?? it?.Code ?? "")).toString()).filter(Boolean)
           : [];
-        if (!items.length) return <div className="text-right text-gray-400 italic">None</div>;
+        
+        if (!items.length) return (
+          <button 
+            onClick={() => {
+              setSelectedPrerequisites([]);
+              setShowPrerequisitesPopup(true);
+            }}
+            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition-colors"
+          >
+            عرض المقررات
+          </button>
+        );
+        
         return (
-          <div className="flex flex-wrap gap-1 justify-end">
-            {items.map((txt, idx) => (
-              <span key={idx} className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                {txt}
-              </span>
-            ))}
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-wrap gap-1 justify-end">
+              {items.slice(0, 2).map((txt, idx) => (
+                <span key={idx} className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full">
+                  {txt}
+                </span>
+              ))}
+              {items.length > 2 && (
+                <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full">
+                  +{items.length - 2}
+                </span>
+              )}
+            </div>
+            <button 
+              onClick={() => {
+                setSelectedPrerequisites(items);
+                setShowPrerequisitesPopup(true);
+              }}
+              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-colors"
+            >
+              عرض الكل
+            </button>
           </div>
         );
       },
@@ -319,6 +384,138 @@ export default function CoursesTable({ items, onEdit, onDelete, onAdd, searchQue
           </div>
         )}
       </div>
+      
+      {/* Prerequisites Popup */}
+      {showPrerequisitesPopup && (
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+          <div 
+            className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-modal max-w-md w-full border border-amber-200/50 transform transition-all duration-300 scale-100 opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-amber-200/50 bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center border-2 border-amber-200">
+                  <List className="text-amber-600" size={20} />
+                </div>
+                <h2 className="text-xl font-bold text-amber-900">المقررات السابقة</h2>
+              </div>
+              <button 
+                onClick={() => setShowPrerequisitesPopup(false)}
+                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {selectedPrerequisites.length > 0 ? (
+                <ul className="space-y-3">
+                  {selectedPrerequisites.map((prerequisite, index) => (
+                    <li 
+                      key={index}
+                      className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl transition-colors duration-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center font-medium">
+                          {index + 1}
+                        </div>
+                        <span className="text-gray-800 font-medium">{prerequisite}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                    <List className="text-amber-400" size={24} />
+                  </div>
+                  <h4 className="text-gray-700 font-medium mb-1">لا توجد مقررات سابقة</h4>
+                  <p className="text-gray-500 text-sm">لم يتم إضافة أي مقررات سابقة</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-amber-200/50 bg-amber-50/50 rounded-b-2xl">
+              <button
+                onClick={() => setShowPrerequisitesPopup(false)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <X size={18} />
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Instructors Popup */}
+      {showInstructorsPopup && (
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+          <div 
+            className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-modal max-w-md w-full border border-blue-200/50 transform transition-all duration-300 scale-100 opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-blue-200/50 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center border-2 border-blue-200">
+                  <Users className="text-blue-600" size={20} />
+                </div>
+                <h2 className="text-xl font-bold text-blue-900">قائمة المحاضرين</h2>
+              </div>
+              <button 
+                onClick={() => setShowInstructorsPopup(false)}
+                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {selectedInstructors.length > 0 ? (
+                <ul className="space-y-3">
+                  {selectedInstructors.map((instructor, index) => (
+                    <li 
+                      key={index}
+                      className="p-3 bg-gray-50 hover:bg-blue-50 border border-gray-100 rounded-xl transition-colors duration-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-medium">
+                          {instructor.charAt(0)}
+                        </div>
+                        <span className="text-gray-800 font-medium">{instructor}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <User className="text-gray-400" size={24} />
+                  </div>
+                  <h4 className="text-gray-700 font-medium mb-1">لا يوجد محاضرون</h4>
+                  <p className="text-gray-500 text-sm">لم يتم إضافة أي محاضرين لهذا المقرر بعد</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-blue-200/50 bg-blue-50/50 rounded-b-2xl">
+              <button
+                onClick={() => setShowInstructorsPopup(false)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <X size={18} />
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

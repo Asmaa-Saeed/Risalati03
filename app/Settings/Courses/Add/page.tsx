@@ -6,7 +6,12 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ArrowRight, Save, Loader2 } from "lucide-react";
-import Toast from "@/app/Component/Toast";
+import dynamic from "next/dynamic";
+
+// ✅ نستخدم dynamic import لتجنب كسر الصفحة لو Toast مش موجود
+const Toast = dynamic(() => import("../../../Component/Toast").catch(() => () => null), { ssr: false });
+
+// ✅ نضبط مسارات الخدمات حسب مكانها في مشروعك
 import { DepartmentsService, type Department } from "@/lib/departments";
 import { DegreesService, type Degree } from "@/lib/degrees";
 import { TracksService, type LookupItem } from "@/lib/tracks";
@@ -14,7 +19,7 @@ import { SemestersService, type SemesterItem } from "@/lib/semesters";
 import { CoursesService, type Course as CourseItem } from "@/lib/courses";
 import { InstructorsService, type Instructor } from "@/lib/instructors";
 
-// Schema matches create course requirements
+// ✅ مخطط البيانات باستخدام Zod
 const schema = z.object({
   code: z.string().min(1, "كود المقرر مطلوب"),
   name: z.string().min(1, "اسم المقرر مطلوب"),
@@ -35,8 +40,19 @@ export default function AddCoursePage() {
   const router = useRouter();
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
-    // departmentId/degreeId exist only in UI and are not sent to backend
-    defaultValues: { code: "", name: "", creditHours: 3, isOptional: false, semester: "", departmentId: 0, degreeId: undefined, msarId: 0, prerequisites: [], description: "", instructors: [] },
+    defaultValues: {
+      code: "",
+      name: "",
+      creditHours: 3,
+      isOptional: false,
+      semester: "",
+      departmentId: 0,
+      degreeId: undefined,
+      msarId: 0,
+      prerequisites: [],
+      description: "",
+      instructors: [],
+    },
   });
 
   const [loadingLookups, setLoadingLookups] = useState(true);
@@ -50,11 +66,8 @@ export default function AddCoursePage() {
   const [semesters, setSemesters] = useState<SemesterItem[]>([]);
   const [allOptions, setAllOptions] = useState<CourseItem[]>([]);
   const [instructorOptions, setInstructorOptions] = useState<Instructor[]>([]);
-
   const [prereqRows, setPrereqRows] = useState<string[]>([]);
   const [instructorRows, setInstructorRows] = useState<string[]>([]);
-
-  const degreeId = watch("degreeId"); // temporarily disabled
 
   useEffect(() => {
     (async () => {
@@ -67,9 +80,11 @@ export default function AddCoursePage() {
           CoursesService.getCourses(),
           InstructorsService.getInstructors(),
         ]);
+
         if (deptRes.success) setDepartments(deptRes.data);
         if (degreesRes.succeeded) setDegrees(degreesRes.data);
-        if (tracksRes.succeeded) setTracks(tracksRes.data.map((t: any) => ({ id: t.id, value: t.name })));
+        if (tracksRes.succeeded)
+          setTracks(tracksRes.data.map((t: any) => ({ id: t.id, value: t.name })));
         if (semestersRes.success) setSemesters(semestersRes.data);
         if (coursesRes.success) setAllOptions(coursesRes.data);
         if (instructorsRes.success) setInstructorOptions(instructorsRes.data as any);
@@ -82,56 +97,34 @@ export default function AddCoursePage() {
     })();
   }, []);
 
-  // Initialize rows if RHF default values changed externally
-  useEffect(() => {
-    const sub = watch((values) => {
-      if (Array.isArray(values.prerequisites) && values.prerequisites.length && prereqRows.length === 0) {
-        setPrereqRows(values.prerequisites as string[]);
-      }
-      if (Array.isArray(values.instructors) && values.instructors.length && instructorRows.length === 0) {
-        setInstructorRows(values.instructors as string[]);
-      }
-    });
-    return () => sub.unsubscribe();
-  }, [watch, prereqRows.length, instructorRows.length]);
-
   const filteredTracks = useMemo(() => {
-    return tracks; // could filter by selected degree if available later
-  }, [tracks]);
+  return tracks; // حالياً ما بنفلترش، لكن ده بيسمح لنا نفلتر لاحقاً حسب الدرجة أو القسم
+}, [tracks]);
+
 
   const onValid: SubmitHandler<FormData> = async (data) => {
     setSaving(true);
     try {
-      // Defensive coercions to match backend expectations
       const payload = {
         ...data,
         code: String(data.code ?? "").trim(),
         creditHours: Number(data.creditHours),
         isOptional: Boolean(data.isOptional),
         semester: String(data.semester).trim(),
-        // departmentId: Number(data.departmentId),
-        // degreeId: Number(data.degreeId),
         msarId: Number(data.msarId),
-        prerequisites: Array.isArray(data.prerequisites) ? data.prerequisites.filter(Boolean) : [],
-      } as FormData;
-
-      if (typeof window !== 'undefined') {
-        console.debug('[AddCourse] Submitting payload', payload);
-      }
+        prerequisites: Array.isArray(data.prerequisites)
+          ? data.prerequisites.filter(Boolean)
+          : [],
+      };
 
       const res = await CoursesService.createCourse(payload as any);
-      if (!res.success) {
-        throw new Error(res.message || "فشل حفظ المقرر");
-      }
+      if (!res.success) throw new Error(res.message || "فشل حفظ المقرر");
+
       setMessage({ type: "success", text: res.message || "تم حفظ المقرر بنجاح" });
       setShowToast(true);
-      setTimeout(() => {
-        router.back();
-      }, 600);
+      setTimeout(() => router.back(), 600);
     } catch (e: any) {
-      if (typeof window !== 'undefined') {
-        console.error('[AddCourse] Submit failed', { error: e, message: e?.message });
-      }
+      console.error("[AddCourse] Submit failed", e);
       setMessage({ type: "error", text: e?.message || "حدث خطأ في حفظ المقرر" });
       setShowToast(true);
     } finally {
@@ -145,11 +138,9 @@ export default function AddCoursePage() {
       errors.name?.message ||
       errors.creditHours?.message ||
       errors.semester?.message ||
-     errors.departmentId?.message ||
-      errors.degreeId?.message ||
       errors.msarId?.message ||
       errors.instructors?.message;
-    setMessage({ type: "error", text: (firstError as string) || "تحقق من الحقول المطلوبة" });
+    setMessage({ type: "error", text: firstError || "تحقق من الحقول المطلوبة" });
     setShowToast(true);
   };
 

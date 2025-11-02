@@ -155,13 +155,31 @@ export default function EditCoursePage() {
     })();
   }, [courseId, reset]);
 
-  // Sync rows to form values
+  // Initialize rows with form values on mount
   useEffect(() => {
-    const sub = watch((values) => {
-      if (Array.isArray(values.prerequisites)) setPrereqRows(values.prerequisites as string[]);
-      if (Array.isArray(values.instructors)) setInstructorRows(values.instructors as string[]);
+    const subscription = watch((values) => {
+      // Only update if the arrays are different to prevent infinite loops
+      if (Array.isArray(values.prerequisites)) {
+        const filteredPrereqs = values.prerequisites.filter((prereq): prereq is string => prereq !== undefined);
+        if (JSON.stringify(filteredPrereqs) !== JSON.stringify(prereqRows)) {
+          setPrereqRows(filteredPrereqs);
+        }
+      }
+      if (Array.isArray(values.instructors)) {
+        const filteredInstructors = values.instructors.filter((instructor): instructor is string => instructor !== undefined);
+        if (JSON.stringify(filteredInstructors) !== JSON.stringify(instructorRows)) {
+          setInstructorRows(filteredInstructors);
+        }
+      }
     });
-    return () => sub.unsubscribe();
+    
+    // Initial setup
+    const currentPrereqs = watch('prerequisites') || [];
+    const currentInstructors = watch('instructors') || [];
+    if (currentPrereqs.length > 0) setPrereqRows(currentPrereqs);
+    if (currentInstructors.length > 0) setInstructorRows(currentInstructors);
+    
+    return () => subscription.unsubscribe();
   }, [watch]);
 
   const filteredTracks = useMemo(() => tracks, [tracks]);
@@ -210,7 +228,8 @@ export default function EditCoursePage() {
   const goBack = () => router.back();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen w-full bg-custom-beige py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <Toast
         show={Boolean(message) && showToast}
         type={message?.type === "success" ? "success" : "error"}
@@ -223,11 +242,11 @@ export default function EditCoursePage() {
       <div className="flex items-center justify-between">
         <div className="text-right">
           <h1 className="text-2xl font-bold text-gray-900">تعديل مقرر</h1>
-          <p className="text-gray-600">قم بتحديث بيانات المقرر ثم احفظ التعديلات</p>
+          <p className="text-gray-600 mb-4">قم بتحديث بيانات المقرر ثم احفظ التعديلات</p>
         </div>
         <button
           onClick={goBack}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition"
+          className="inline-flex items-center gap-2 px-4 py-2 mb-4 rounded-full border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition"
         >
           العودة إلى الصفحة السابقة
           <ArrowRight size={18} />
@@ -293,7 +312,7 @@ export default function EditCoursePage() {
               {/* Prerequisites table */}
               <div className="md:col-span-2">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">المتطلبات السابقة (اختياري)</label>
+                  <label className="block text-sm font-semibold text-gray-700">المتطلبات السابقة (Prerequisites)</label>
                 </div>
                 <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
                   <table className="w-full text-right">
@@ -314,7 +333,7 @@ export default function EditCoursePage() {
                             <td className="px-4 py-3">
                               <select
                                 className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 border-gray-200 hover:border-gray-300"
-                                value={val}
+                                value={val || ''}
                                 onChange={(e) => {
                                   const next = [...prereqRows];
                                   next[idx] = e.target.value; // store course id
@@ -352,9 +371,8 @@ export default function EditCoursePage() {
                       type="button"
                       className="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                       onClick={() => {
-                        const next = [...prereqRows, ""];
-                        setPrereqRows(next);
-                        setValue("prerequisites", next.filter(Boolean), { shouldDirty: true });
+                        setPrereqRows(prev => [...prev, ""]);
+                        // Don't update form value until a course is actually selected
                       }}
                     >
                       إضافة كورس جديد
@@ -425,9 +443,8 @@ export default function EditCoursePage() {
                       type="button"
                       className="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
                       onClick={() => {
-                        const next = [...instructorRows, ""];
-                        setInstructorRows(next);
-                        setValue("instructors", next.filter(Boolean), { shouldDirty: true });
+                        setInstructorRows(prev => [...prev, ""]);
+                        // Don't update form value until an instructor is actually selected
                       }}
                     >
                       إضافة محاضر
@@ -446,6 +463,7 @@ export default function EditCoursePage() {
             </div>
           </form>
         )}
+      </div>
       </div>
     </div>
   );

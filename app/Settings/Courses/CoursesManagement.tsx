@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, BookOpenText, Layers3, Building2, Plus } from "lucide-react";
+import { Loader2, BookOpenText, Layers3, Building2, Plus, ArrowRight } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Course, CoursesService, CreateCourseData, UpdateCourseData } from "@/lib/courses";
 import { getAllCourses } from "@/actions/courseActions";
@@ -200,16 +200,9 @@ export default function CoursesManagement() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-right">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">إدارة المقررات</h2>
-        <p className="text-gray-600">إدارة وتنظيم المقررات في النظام الأكاديمي</p>
-      </div>
-
-
+    <div className="space-y-6 max-w-5xl mx-auto px-4">
       {/* Simple Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div>

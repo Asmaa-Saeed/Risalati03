@@ -71,6 +71,7 @@ export default function DepartmentsTable({
         ),
       },
       
+     
       {
         accessorKey: "programName",
         header: ({ column }: HeaderContext<Department, unknown>) => (
@@ -110,6 +111,19 @@ export default function DepartmentsTable({
         cell: ({ row }: CellContext<Department, unknown>) => (
           <div className="text-right">
             <span className="text-gray-700 text-sm line-clamp-2">{row.getValue("description")}</span>
+          </div>
+        ),
+      },
+       {
+        accessorKey: "code",
+        header: ({ column }: HeaderContext<Department, unknown>) => (
+          <div className="text-right font-semibold text-gray-900">
+            الكود
+          </div>
+        ),
+        cell: ({ row }: CellContext<Department, unknown>) => (
+          <div className="text-right text-gray-900">
+            {row.original.code}
           </div>
         ),
       },

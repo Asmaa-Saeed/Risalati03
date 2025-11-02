@@ -198,6 +198,7 @@ export const getPrograms = async (): Promise<{
 export const createDepartment = async (
   departmentData: {
     name: string;
+    code: string;
     description: string;
     programId: number;
   },
@@ -212,7 +213,45 @@ export const createDepartment = async (
       return { success: false, message: "الرجاء تسجيل الدخول أولاً" };
     }
 
-    console.log("🔹 Sending data to API:", departmentData);
+    console.log("🔍 Raw department data received:", departmentData);
+    
+    // Debug: Log the raw code value and its type
+    console.log("🔍 Raw code value:", departmentData.code);
+    console.log("🔍 Raw code type:", typeof departmentData.code);
+    
+    // Ensure we have all required fields with proper trimming
+    const code = departmentData.code ? String(departmentData.code).trim() : '';
+    const name = (departmentData.name || '').trim();
+    const description = (departmentData.description || '').trim();
+    const programId = departmentData.programId || '';
+    
+    console.log("🔍 Processed code value:", code);
+    console.log("🔍 Processed code length:", code.length);
+    
+    // Validate required fields first
+    if (!code || code.length < 2) {
+      console.error("❌ Invalid code value after processing:", {
+        original: departmentData.code,
+        processed: code,
+        length: code.length,
+        type: typeof code,
+        isFalsy: !code,
+        isTooShort: code.length < 2
+      });
+      throw new Error("كود القسم مطلوب ويجب أن يكون حرفين على الأقل");
+    }
+    
+    // Prepare the request body with correct field names (lowercase)
+    const requestBody = {
+      code: code,
+      name: name,
+      description: description,
+      programId: programId
+    };
+    
+    console.log("🔍 Sending to API:", requestBody);
+    
+    console.log("🔹 Sending data to API:", requestBody);
     
     const response = await fetch(`${API_URL}/Departments`, {
       method: "POST",
@@ -220,7 +259,7 @@ export const createDepartment = async (
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(departmentData),
+      body: JSON.stringify(requestBody),
     });
 
     console.log("🔹 Create Response status:", response.status);
@@ -255,6 +294,7 @@ export const updateDepartment = async (
   id: number,
   departmentData: {
     name: string;
+    code: string;
     description: string;
     programId: number;
   },
@@ -269,19 +309,52 @@ export const updateDepartment = async (
       return { success: false, message: "الرجاء تسجيل الدخول أولاً" };
     }
 
-    // ✅ لازم نضيف id جوه الـ body زي ما الـ Swagger طالب
-    const bodyData = { id, ...departmentData };
-
+    console.log("🔍 Raw department data received for update:", departmentData);
+    
+    // Process and validate the data similar to create
+    const code = departmentData.code ? String(departmentData.code).trim() : '';
+    const name = (departmentData.name || '').trim();
+    const description = (departmentData.description || '').trim();
+    const programId = departmentData.programId || '';
+    
+    console.log("🔍 Processed update code value:", code);
+    console.log("🔍 Processed update code length:", code.length);
+    
+    // Validate required fields
+    if (!code || code.length < 2) {
+      console.error("❌ Invalid code value in update:", {
+        original: departmentData.code,
+        processed: code,
+        length: code.length,
+        type: typeof code,
+        isFalsy: !code,
+        isTooShort: code.length < 2
+      });
+      throw new Error("كود القسم مطلوب ويجب أن يكون حرفين على الأقل");
+    }
+    
+    // Prepare the request body with proper field names and validation
+    const requestBody = {
+      id: id,
+      code: code,
+      name: name,
+      description: description,
+      programId: programId
+    };
+    
+    console.log("🔍 Sending update to API:", requestBody);
+    
     const response = await fetch(`${API_URL}/Departments/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(bodyData),
+      body: JSON.stringify(requestBody),
     });
 
     console.log("🔹 Update Response status:", response.status);
+   
     const text = await response.text();
     console.log("🔹 Update Response body:", text);
 

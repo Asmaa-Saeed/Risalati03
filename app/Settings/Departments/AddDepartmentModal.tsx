@@ -9,6 +9,7 @@ import { DepartmentsService, Program, CreateDepartmentData } from "@/lib/departm
 
 const departmentSchema = z.object({
   name: z.string().min(1, "اسم القسم مطلوب").min(2, "اسم القسم يجب أن يكون حرفين على الأقل"),
+  code: z.string().min(1, "كود القسم مطلوب").min(2, "كود القسم يجب أن يكون حرفين على الأقل").max(3, "كود القسم يجب أن يكون 3 أحرف بالضبط"),
   description: z.string().min(1, "وصف القسم مطلوب").min(5, "الوصف يجب أن يكون 5 أحرف على الأقل"),
   programId: z.string().min(1, "البرنامج مطلوب"),
   programName: z.string().min(1, "اسم البرنامج مطلوب"),
@@ -65,15 +66,15 @@ export default function AddDepartmentModal({ isOpen, onClose, onSubmit, loading 
     }
   }, [isOpen]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch,
-  } = useForm<DepartmentFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch, formState } = useForm<DepartmentFormData>({
     resolver: zodResolver(departmentSchema),
+    defaultValues: {
+      name: "",
+      code: "",
+      description: "",
+      programId: "",
+      programName: ""
+    }
   });
 
   const watchedProgramId = watch("programId");
@@ -85,30 +86,64 @@ export default function AddDepartmentModal({ isOpen, onClose, onSubmit, loading 
     }
   }, [watchedProgramId, programs, setValue]);
 
-  const handleFormSubmit = async (data: DepartmentFormData) => {
+  const handleFormSubmit = async (formData: DepartmentFormData) => {
     try {
-      // Add default values for required fields that are not in the form
-      const completeData = {
-        ...data,
-        departmentId: `DEPT_${Date.now()}`,
-        collegeId: '1', // Default college
-        collegeName: '', // Empty college name
-        headOfDepartment: 'لم يحدد',
-        headOfDepartmentId: `HOD_${Date.now()}`,
-        totalStudents: 0,
-        totalCourses: 0,
-        status: 'active' as const,
-        establishedYear: new Date().getFullYear(),
-        phone: 'لم يحدد',
-        email: 'department@university.edu.eg',
-        room: 'لم يحدد',
-      };
+      console.log("📝 Form data received:", formData);
+      
+      // Get and validate the code field
+      const codeValue = formData.code?.trim() || '';
+      console.log("🔍 Code field value:", codeValue);
+      
+      // Validate form
+      if (!codeValue || !formData.name || !formData.programId) {
+        const missingFields = [];
+        if (!formData.name) missingFields.push('name');
+        if (!codeValue) {
+          console.error("❌ Code is missing or empty after trimming");
+          missingFields.push('code');
+        }
+        if (!formData.programId) missingFields.push('programId');
+        
+        console.error("❌ Missing required fields:", missingFields);
+        return;
+      }
+      
+      if (codeValue.length < 2) {
+        console.error("❌ Code must be at least 2 characters long");
+        return;
+      }
 
-      await onSubmit(completeData);
+      // Get the selected program
+      const selectedProgram = programs.find(p => p.id.toString() === formData.programId);
+      
+    // In AddDepartmentModal.tsx, update the departmentData object to include all required fields:
+const departmentData: CreateDepartmentData = {
+  departmentId: `DEPT-${Date.now()}`,
+  name: formData.name.trim(),
+  code: codeValue,
+  description: formData.description.trim(),
+  programId: formData.programId,
+  programName: selectedProgram?.value || '',
+  collegeId: '1',
+  collegeName: 'كلية الحاسبات والمعلومات',
+  headOfDepartment: '',
+  headOfDepartmentId: '',
+  // Add the missing required fields with default values
+  totalStudents: 0,
+  totalCourses: 0,
+  status: 'active',
+  establishedYear: new Date().getFullYear(),
+  phone: '',
+  email: '',
+  room: ''
+};
+
+      console.log("🚀 Submitting department data:", departmentData);
+      await onSubmit(departmentData);
       reset();
-      setSelectedProgram("");
       onClose();
     } catch (error) {
+      console.error("❌ Error submitting form:", error);
       // Error handling is done in parent component
     }
   };
@@ -147,22 +182,48 @@ export default function AddDepartmentModal({ isOpen, onClose, onSubmit, loading 
 
         {/* Form */}
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
-          {/* Department Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              اسم القسم *
-            </label>
-            <input
-              {...register("name")}
-              type="text"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="مثال: قسم علوم الحاسوب"
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-            )}
+          {/* Department Name and Code */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                اسم القسم *
+              </label>
+              <input
+                {...register("name")}
+                type="text"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                  errors.name ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="مثال: قسم علوم الحاسوب"
+              />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                كود القسم *
+              </label>
+              <input
+                {...register("code", { 
+                  required: "كود القسم مطلوب",
+                  minLength: {
+                    value: 2,
+                    message: "يجب أن يكون كود القسم حرفين على الأقل"
+                  }
+                })}
+                type="text"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                  errors.code ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="مثال: CS"
+                dir="ltr"
+                style={{ textAlign: 'right' }}
+              />
+              {errors.code && (
+                <p className="mt-1 text-sm text-red-600">{errors.code.message}</p>
+              )}
+            </div>
           </div>
 
           {/* Program Selection */}

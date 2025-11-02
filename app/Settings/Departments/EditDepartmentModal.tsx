@@ -15,6 +15,7 @@ import {
 // ✅ Validation Schema
 const departmentSchema = z.object({
   name: z.string().min(2, "اسم القسم يجب أن يكون حرفين على الأقل"),
+  code: z.string().min(1, "كود القسم مطلوب").min(2, "كود القسم يجب أن يكون حرفين على الأقل").max(3, "كود القسم يجب أن يكون 3 أحرف بالضبط"),
   description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
   programId: z.string().min(1, "البرنامج مطلوب"),
 });
@@ -76,8 +77,15 @@ export default function EditDepartmentModal({
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<DepartmentFormData>({
     resolver: zodResolver(departmentSchema),
+    defaultValues: {
+      name: department?.name || "",
+      code: department?.code || "",
+      description: department?.description || "",
+      programId: department?.programId?.toString() || "",
+    },
   });
 
   // ✅ Reset form when department changes
@@ -85,6 +93,7 @@ export default function EditDepartmentModal({
     if (department) {
       reset({
         name: department.name ?? "",
+        code: department.code ?? "",
         description: department.description ?? "",
         programId: department.programId ? String(department.programId) : "",
       });
@@ -95,13 +104,45 @@ export default function EditDepartmentModal({
   const handleFormSubmit = async (data: DepartmentFormData) => {
     if (!department) return;
 
-    // This will be handled by the parent component (DepartmentsManagement)
-    await onSubmit({
-      id: department.id,
-      name: data.name.trim(),
-      description: data.description.trim(),
-      programId: data.programId,
-    });
+    try {
+      // Ensure code is at least 2 characters long after trimming
+      const trimmedCode = data.code.trim();
+      if (trimmedCode.length < 2) {
+        console.error("Code must be at least 2 characters long");
+        return;
+      }
+
+      // Find the selected program
+      const selectedProgram = programs.find(p => p.id === Number(data.programId));
+      
+      // Create the update data with all required fields
+      const updateData: UpdateDepartmentData = {
+        id: department.id,
+        name: data.name.trim(),
+        code: trimmedCode,
+        description: data.description.trim(),
+        programId: data.programId,
+        programName: selectedProgram?.value || '',
+        // Include all required fields from the department object
+        departmentId: department.departmentId,
+        collegeId: department.collegeId || '1',
+        collegeName: department.collegeName || 'كلية الحاسبات والمعلومات',
+        headOfDepartment: department.headOfDepartment || '',
+        headOfDepartmentId: department.headOfDepartmentId || '',
+        totalStudents: department.totalStudents || 0,
+        totalCourses: department.totalCourses || 0,
+        status: department.status || 'active',
+        establishedYear: department.establishedYear || new Date().getFullYear(),
+        phone: department.phone || '',
+        email: department.email || '',
+        room: department.room || ''
+      };
+
+      // This will be handled by the parent component (DepartmentsManagement)
+      await onSubmit(updateData);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
   };
 
   if (!isVisible) return null;
@@ -140,22 +181,40 @@ export default function EditDepartmentModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
-          {/* Department Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              اسم القسم *
-            </label>
-            <input
-              {...register("name")}
-              type="text"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="مثال: قسم علوم الحاسوب"
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-            )}
+          {/* Department Name and Code */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                اسم القسم *
+              </label>
+              <input
+                {...register("name")}
+                type="text"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                  errors.name ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="مثال: قسم علوم الحاسوب"
+              />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                كود القسم *
+              </label>
+              <input
+                {...register("code")}
+                type="text"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                  errors.code ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="مثال: CS"
+              />
+              {errors.code && (
+                <p className="mt-1 text-sm text-red-600">{errors.code.message}</p>
+              )}
+            </div>
           </div>
 
           {/* Program Selection */}

@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { X, Save, Loader2 } from "lucide-react";
 import { CreateDegreeData, DegreesService } from "@/lib/degrees";
+import axios from "axios";
 
 const degreeSchema = z.object({
   name: z.string().min(1, "اسم الدرجة العلمية مطلوب"),
@@ -28,7 +29,15 @@ interface AddDegreeModalProps {
   loading?: boolean;
 }
 
+interface GeneralDegree {
+  id: number;
+  value: string;
+}
+
 const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubmit, loading = false }) => {
+  const [loadingDegrees, setLoadingDegrees] = useState(false);
+  const [generalDegrees, setGeneralDegrees] = useState<GeneralDegree[]>([]);
+  
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<{
     name: string;
     description?: string;
@@ -44,6 +53,105 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
   });
 
   const departments = DegreesService.getDepartments();
+
+
+  // Fetch general degrees from the external API
+  useEffect(() => {
+    const fetchGeneralDegrees = async () => {
+      try {
+        setLoadingDegrees(true);
+        // Get the authentication token from localStorage
+        const token = localStorage.getItem('token');
+        console.log('Token from localStorage:', token ? 'Found' : 'Not found');
+        
+        if (!token) {
+          console.error('No authentication token found');
+          return;
+        }
+
+        try {
+          console.log('Fetching general degrees from API...');
+          console.log('Using token:', token ? 'Token exists' : 'No token');
+          
+          let response;
+          
+          // First, try with credentials
+          try {
+            response = await axios.get<GeneralDegree[]>('https://professor.runasp.net/api/Lookups/GeneralDegree', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              timeout: 10000,
+              withCredentials: true
+            });
+          } catch (error) {
+            console.log('Request with credentials failed, trying without credentials...');
+            // If that fails, try without credentials
+            try {
+              response = await axios.get<GeneralDegree[]>('https://professor.runasp.net/api/Lookups/GeneralDegree', {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                timeout: 10000,
+                withCredentials: false
+              });
+            } catch (secondError) {
+              console.error('Both API attempts failed:', secondError);
+              throw secondError; // Re-throw to be caught by the outer catch
+            }
+          }
+          
+          // Process successful response
+          if (response) {
+            console.log('API Response:', {
+              status: response.status,
+              statusText: response.statusText,
+              data: response.data
+            });
+            
+            if (response.data && Array.isArray(response.data)) {
+              setGeneralDegrees(response.data);
+            } else {
+              console.error('Unexpected response format:', response.data);
+              throw new Error('Unexpected response format from server');
+            }
+          }
+          return;
+        } catch (apiError: any) {
+          console.error('API request failed with details:', {
+            message: apiError.message,
+            response: apiError.response ? {
+              status: apiError.response.status,
+              statusText: apiError.response.statusText,
+              data: apiError.response.data
+            } : 'No response',
+            request: apiError.request ? 'Request made but no response' : 'No request was made',
+            config: {
+              url: apiError.config?.url,
+              method: apiError.config?.method,
+              headers: apiError.config?.headers
+            }
+          });
+          
+          // Show error to user (you might want to use a toast or alert)
+          // toast.error('فشل في تحميل الدرجات العلمية. يرجى المحاولة مرة أخرى.');
+        }
+      } catch (error) {
+        console.error('All attempts to fetch general degrees failed:', error);
+      } finally {
+    
+        setLoadingDegrees(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchGeneralDegrees();
+    }
+  }, [isOpen]);
 
   const handleFormSubmit = async (data: {
     name: string;
@@ -184,14 +292,22 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubm
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 الدرجة العامة *
               </label>
-              <input
-                type="text"
+              <select
                 {...register("generalDegree")}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
                   errors.generalDegree ? "border-red-500" : "border-gray-300"
                 }`}
-                placeholder="أدخل نوع الدرجة العامة"
-              />
+                disabled={loadingDegrees}
+              >
+                <option value="">
+                  {loadingDegrees ? "جاري التحميل..." : "اختر الدرجة العامة"}
+                </option>
+                {generalDegrees.map((degree) => (
+                  <option key={degree.id} value={degree.value}>
+                    {degree.value}
+                  </option>
+                ))}
+              </select>
               {errors.generalDegree && (
                 <p className="mt-1 text-sm text-red-600">{errors.generalDegree.message}</p>
               )}

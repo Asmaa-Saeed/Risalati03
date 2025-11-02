@@ -3,6 +3,7 @@ export interface Department {
   id: string;
   departmentId: string;
   name: string;
+  code: string;
   description: string;
   programId: string;
   programName: string;
@@ -24,6 +25,7 @@ export interface Department {
 export interface CreateDepartmentData {
   departmentId: string;
   name: string;
+  code: string;
   description: string;
   programId: string;
   programName: string;
@@ -88,6 +90,7 @@ export class DepartmentsService {
         // Transform API data to match our interface
         const transformedData: Department[] = response.data.map((item: any) => ({
           id: item.id.toString(),
+          code: item.code,
           departmentId: `DEPT_${item.id}`,
           name: item.name,
           description: item.description || '',
@@ -228,12 +231,16 @@ export class DepartmentsService {
 
       // Import the API function dynamically
       const { createDepartment } = await import('@/actions/departmentActions');
+      
+      // Prepare the API data with all required fields
       const apiData = {
         name: departmentData.name,
+        code: departmentData.code,
         description: departmentData.description,
-        programId: parseInt(departmentData.programId),
+        programId: parseInt(departmentData.programId, 10), // Parse to number as expected by the API
       };
 
+      console.log('🔍 Sending to API:', apiData); // Debug log
       const response = await createDepartment(apiData, token);
 
       if (response.success) {
@@ -242,6 +249,7 @@ export class DepartmentsService {
           id: response.data?.id?.toString() || departmentData.departmentId,
           departmentId: departmentData.departmentId,
           name: response.data?.name || departmentData.name,
+          code: departmentData.code, 
           description: response.data?.description || departmentData.description,
           programId: response.data?.programId?.toString() || departmentData.programId,
           programName: departmentData.programName,
@@ -293,22 +301,39 @@ export class DepartmentsService {
           message: 'الرجاء تسجيل الدخول أولاً',
         };
       }
+      console.log("✅ Update department data:", departmentData);
+      
+      // Validate and trim the code
+      const trimmedCode = departmentData.code?.trim() || '';
+      if (trimmedCode.length < 2) {
+        console.error("Code must be at least 2 characters long");
+        return {
+          success: false,
+          data: null,
+          message: 'يجب أن يتكون رمز القسم من حرفين على الأقل'
+        };
+      }
 
       // Import the API function dynamically
       const { updateDepartment } = await import('@/actions/departmentActions');
       const apiData = {
-        name: departmentData.name!,
-        description: departmentData.description!,
-        programId: parseInt(departmentData.programId!),
+        name: departmentData.name?.trim() || '',
+        code: trimmedCode,
+        description: departmentData.description?.trim() || '',
+        programId: parseInt(departmentData.programId || '0'),
       };
+      
+      console.log("📤 Sending update with data:", apiData);
 
       const response = await updateDepartment(parseInt(departmentData.id), apiData, token);
+      console.log("✅ Update response:", response);
 
       if (response.success) {
         // ✅ الـ API يرجع data: true, مش object كامل
         // نستخدم البيانات اللي عندنا من departmentData
         const updatedDepartment: Department = {
           id: departmentData.id,
+          code: departmentData.code!,
           departmentId: departmentData.departmentId || `DEPT_${departmentData.id}`,
           name: departmentData.name!,
           description: departmentData.description!,
@@ -328,6 +353,7 @@ export class DepartmentsService {
           createdAt: departmentData.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
+        console.log("✅ Updated department:", updatedDepartment);
 
         return {
           success: true,

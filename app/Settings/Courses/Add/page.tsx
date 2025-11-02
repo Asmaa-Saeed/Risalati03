@@ -6,10 +6,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ArrowRight, Save, Loader2 } from "lucide-react";
-import dynamic from "next/dynamic";
-
-// ✅ نستخدم dynamic import لتجنب كسر الصفحة لو Toast مش موجود
-const Toast = dynamic(() => import("../../../Component/Toast").catch(() => () => null), { ssr: false });
+import { Toaster, toast } from "react-hot-toast";
 
 // ✅ نضبط مسارات الخدمات حسب مكانها في مشروعك
 import { DepartmentsService, type Department } from "@/lib/departments";
@@ -38,6 +35,8 @@ type FormData = z.infer<typeof schema>;
 
 export default function AddCoursePage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -58,7 +57,6 @@ export default function AddCoursePage() {
   const [loadingLookups, setLoadingLookups] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [showToast, setShowToast] = useState(false);
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [degrees, setDegrees] = useState<Degree[]>([]);
@@ -90,7 +88,6 @@ export default function AddCoursePage() {
         if (instructorsRes.success) setInstructorOptions(instructorsRes.data as any);
       } catch (e) {
         setMessage({ type: "error", text: "حدث خطأ أثناء تحميل البيانات" });
-        setShowToast(true);
       } finally {
         setLoadingLookups(false);
       }
@@ -98,9 +95,8 @@ export default function AddCoursePage() {
   }, []);
 
   const filteredTracks = useMemo(() => {
-  return tracks; // حالياً ما بنفلترش، لكن ده بيسمح لنا نفلتر لاحقاً حسب الدرجة أو القسم
-}, [tracks]);
-
+    return tracks; // حالياً ما بنفلترش، لكن ده بيسمح لنا نفلتر لاحقاً حسب الدرجة أو القسم
+  }, [tracks]);
 
   const onValid: SubmitHandler<FormData> = async (data) => {
     setSaving(true);
@@ -120,13 +116,11 @@ export default function AddCoursePage() {
       const res = await CoursesService.createCourse(payload as any);
       if (!res.success) throw new Error(res.message || "فشل حفظ المقرر");
 
-      setMessage({ type: "success", text: res.message || "تم حفظ المقرر بنجاح" });
-      setShowToast(true);
+      toast.success("تم حفظ المقرر بنجاح");
       setTimeout(() => router.back(), 600);
     } catch (e: any) {
       console.error("[AddCourse] Submit failed", e);
-      setMessage({ type: "error", text: e?.message || "حدث خطأ في حفظ المقرر" });
-      setShowToast(true);
+      toast.error(e?.message || "حدث خطأ في حفظ المقرر");
     } finally {
       setSaving(false);
     }
@@ -149,13 +143,38 @@ export default function AddCoursePage() {
   return (
     <div className="min-h-screen w-full bg-custom-beige py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <Toast
-        show={Boolean(message) && showToast}
-        type={message?.type === "success" ? "success" : "error"}
-        message={message?.text || ""}
-        duration={3000}
-        onClose={() => { setShowToast(false); setMessage(null); }}
-        position="top-center"
+      <Toaster 
+        toastOptions={{
+          duration: 1000,
+          style: {
+            direction: 'rtl',
+            fontFamily: 'inherit',
+            borderRadius: '0.375rem',
+            padding: '0.75rem 1rem',
+            minWidth: '300px',
+            maxWidth: '90vw',
+          },
+          success: {
+            style: {
+              background: '#10b981',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#10b981',
+            },
+          },
+          error: {
+            style: {
+              background: '#ef4444',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#ef4444',
+            },
+          },
+        }}
       />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">

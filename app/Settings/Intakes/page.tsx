@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, AlertTriangle, Loader2, Calendar, CalendarDays } from 'lucide-react';
 import { Intake, IntakesService } from '@/actions/intakes';
-import { toast, Toaster } from 'react-hot-toast';
+import Toast from '@/app/Component/Toast';
 import IntakesTable from './IntakesTable';
 import AddIntakeModal from './AddIntakeModal';
 import EditIntakeModal from './EditIntakeModal';
@@ -16,6 +16,7 @@ export default function IntakesManagement() {
   const [intakes, setIntakes] = useState<Intake[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedIntake, setSelectedIntake] = useState<Intake | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,12 +35,10 @@ export default function IntakesManagement() {
       if (response.succeeded) {
         setIntakes(response.data);
       } else {
-        toast.error(response.message || 'حدث خطأ في تحميل البيانات');
+        setMessage({ type: 'error', text: response.message || 'حدث خطأ في تحميل البيانات' });
       }
     } catch (error) {
-      console.error('Error loading intakes:', error);
-      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تحميل البيانات';
-      toast.error(errorMessage);
+      setMessage({ type: 'error', text: 'حدث خطأ في تحميل البيانات' });
     } finally {
       setLoading(false);
     }
@@ -50,19 +49,21 @@ export default function IntakesManagement() {
     try {
       const response = await IntakesService.createIntake(intakeData);
       if (response.succeeded && response.data) {
-        toast.success(response.message || 'تمت إضافة العام الدراسي بنجاح');
+        setMessage({ type: 'success', text: response.message || 'تمت إضافة العام الدراسي بنجاح' });
         closeModal();
         // Refresh the page after a short delay to show the success message
         setTimeout(() => {
           router.refresh();
         }, 1000);
       } else {
-        toast.error(response.message || 'حدث خطأ في إضافة العام الدراسي');
+        setMessage({ type: 'error', text: response.message || 'حدث خطأ في إضافة العام الدراسي' });
       }
     } catch (error) {
       console.error('Add intake error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في إضافة العام الدراسي';
-      toast.error(errorMessage);
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'حدث خطأ في إضافة العام الدراسي' 
+      });
     } finally {
       setSaving(false);
     }
@@ -74,19 +75,21 @@ export default function IntakesManagement() {
       const response = await IntakesService.updateIntake(intakeData);
       if (response.succeeded && response.data) {
         // Update the specific intake in the intakes list
-        toast.success(response.message || 'تم تحديث العام الدراسي بنجاح');
+        setMessage({ type: 'success', text: response.message || 'تم تحديث العام الدراسي بنجاح' });
         closeModal();
         // Refresh the page after a short delay to show the success message
         setTimeout(() => {
           router.refresh();
         }, 1000);
       } else {
-        toast.error(response.message || 'حدث خطأ في تحديث العام الدراسي');
+        setMessage({ type: 'error', text: response.message || 'حدث خطأ في تحديث العام الدراسي' });
       }
     } catch (error) {
       console.error('Edit intake error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تحديث العام الدراسي';
-      toast.error(errorMessage);
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'حدث خطأ في تحديث العام الدراسي' 
+      });
     } finally {
       setSaving(false);
     }
@@ -100,19 +103,29 @@ export default function IntakesManagement() {
       const response = await IntakesService.deleteIntake(selectedIntake.id);
       if (response.succeeded) {
         await loadIntakes();
-        toast.success(response.message || 'تم حذف العام الدراسي بنجاح');
+        setMessage({ type: 'success', text: response.message || 'تم حذف العام الدراسي بنجاح' });
         closeModal();
       } else {
         // This will show the error message from the server
-        toast.error(response.message || 'حدث خطأ في حذف العام الدراسي');
-        // Don't close the modal if there was an error
-        return;
+        setMessage({ 
+          type: 'error', 
+          text: response.message || 'حدث خطأ في حذف العام الدراسي' 
+        });
+        
+        // If there's a specific error about related data, we can handle it here
+        if (response.message?.includes('مرتبط ببيانات أخرى')) {
+          // You can add additional handling here if needed
+          console.log('Cannot delete intake due to related data');
+        }
       }
     } catch (error) {
       console.error('Delete intake error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في حذف العام الدراسي';
-      toast.error(errorMessage);
-      return;
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'حدث خطأ في حذف العام الدراسي' 
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -161,39 +174,11 @@ export default function IntakesManagement() {
         <p className="text-gray-600">إدارة وتنظيم جميع الأعوام الدراسية في النظام الأكاديمي</p>
       </div>
 
-      <Toaster 
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            direction: 'rtl',
-            fontFamily: 'inherit',
-            borderRadius: '0.375rem',
-            padding: '0.75rem 1rem',
-            minWidth: '300px',
-            maxWidth: '90vw',
-          },
-          success: {
-            style: {
-              background: '#10b981',
-              color: '#fff',
-            },
-            iconTheme: {
-              primary: '#fff',
-              secondary: '#10b981',
-            },
-          },
-          error: {
-            style: {
-              background: '#ef4444',
-              color: '#fff',
-            },
-            iconTheme: {
-              primary: '#fff',
-              secondary: '#ef4444',
-            },
-          },
-        }}
+      <Toast 
+        show={!!message} 
+        type={message?.type} 
+        message={message?.text || ''} 
+        onClose={() => setMessage(null)}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

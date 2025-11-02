@@ -236,7 +236,6 @@ export default function EditCoursePage() {
         message={message?.text || ""}
         duration={3000}
         onClose={() => { setShowToast(false); setMessage(null); }}
-        position="top-center"
       />
 
       <div className="flex items-center justify-between">

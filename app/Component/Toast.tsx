@@ -16,9 +16,9 @@ interface ToastProps {
 
 const typeStyles = {
   success: {
-    bgColor: "bg-[#10b981]",
+    bgColor: "bg-[#10b981]", // Exact green from react-hot-toast
     textColor: "text-white",
-    icon: <CheckCircle2 size={20} className="text-white" />,
+    icon: <CheckCircle2 size={20} />,
   },
   error: {
     bgColor: "bg-[#ef4444]", // Slightly darker red
@@ -38,16 +38,10 @@ const typeStyles = {
 } as const;
 
 export default function Toast({ show, type = "info", message, duration = 3000, onClose }: ToastProps) {
-  // Debug log the incoming props
-  console.log('Toast props:', { show, type, message });
-  
   // Ensure type is one of the valid types, default to 'info' if invalid
   const toastType: ToastType = (['success', 'error', 'info', 'warning'].includes(type) 
-    ? type as ToastType 
-    : 'info');
-    
-  console.log('Resolved toastType:', toastType);
-  
+    ? type 
+    : 'info') as ToastType;
   useEffect(() => {
     if (!show) return;
     const id = setTimeout(onClose, duration);
@@ -59,30 +53,15 @@ export default function Toast({ show, type = "info", message, duration = 3000, o
   const posCls = "top-6 left-1/2 -translate-x-1/2";
   const visibility = show ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none";
 
-  // Debug: Log the final style object
-  console.log('Final style object:', style);
-
-  // Define colors for each type
-  const getBackgroundColor = () => {
-    switch(toastType) {
-      case 'success': return '#10b981';
-      case 'error': return '#ef4444';
-      case 'info': return '#3b82f6';
-      case 'warning': return '#eab308';
-      default: return '#3b82f6';
-    }
-  };
-
   return (
     <div className={`${base} ${posCls} ${visibility}`}>
       <div 
-        className="flex items-center gap-3 rounded-md px-4 py-3 shadow-lg min-w-[300px] max-w-[90vw] text-white"
+        className={`flex items-center gap-3 rounded-md px-4 py-3 shadow-lg ${style.bgColor} ${style.textColor} min-w-[300px] max-w-[90vw]`}
         style={{
           animation: show ? 'toast-enter 0.3s ease-out' : 'toast-exit 0.3s ease-in forwards',
           direction: 'rtl',
           fontFamily: 'inherit',
           borderRadius: '0.375rem',
-          backgroundColor: getBackgroundColor(),
         }}
       >
         <div className="flex-shrink-0">{style.icon}</div>

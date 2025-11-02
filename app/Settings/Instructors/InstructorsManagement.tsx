@@ -168,7 +168,6 @@ export default function InstructorsManagement() {
         message={message?.text || ""}
         duration={3500}
         onClose={() => { setShowToast(false); setMessage(null); }}
-        position="top-center"
       />
 
       {/* Simple Stats (mirroring style) */}

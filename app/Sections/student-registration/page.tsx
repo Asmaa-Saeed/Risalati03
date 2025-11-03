@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { addStudent } from "@/actions/student";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 const APIURL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -11,7 +12,7 @@ export default function StudentRegistrationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [gender, setGender] = useState<string>(""); // حالة منفصلة للجنس (فقط للواجهة الأمامية)
+  const [gender, setGender] = useState<string>("");
 
   // ====== Lookups ======
   const [nationalities, setNationalities] = useState<any[]>([]);
@@ -180,45 +181,48 @@ export default function StudentRegistrationPage() {
     setFormData({ ...formData, qualifications: updated });
   };
 
-  // ====== Handle Submit ======
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-  
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setMessage("الرجاء تسجيل الدخول أولاً");
-        setLoading(false);
-        return;
-      }
-  
-    
-  
-      if (!formData.qualifications.length) {
-        setMessage("الرجاء إضافة مؤهل واحد على الأقل");
-        setLoading(false);
-        return;
-      }
-  
-      // ===== ارسال للـ API =====
-      const result = await addStudent(formData, token);
-      console.log("📌 API Result:", result);
-  
-      if (result.success) {
-        setMessage("تم الحفظ بنجاح!");
-        router.push("/StudentDashboard");
-      } else {
-        setMessage(result.message || "حدث خطأ أثناء الإرسال");
-      }
-    } catch (err: any) {
-      console.error("❌ خطأ أثناء الإرسال:", err);
-      setMessage(err?.message || "حدث خطأ غير متوقع أثناء الإرسال");
-    } finally {
+  e.preventDefault();
+  setLoading(true);
+  setMessage(null);
+
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("الرجاء تسجيل الدخول أولاً");
       setLoading(false);
+      return;
     }
-  };
+
+    if (!formData.qualifications.length) {
+      toast.error("الرجاء إضافة مؤهل واحد على الأقل");
+      setLoading(false);
+      return;
+    }
+
+    const result = await addStudent(formData, token);
+    console.log("📌 API Result:", result);
+
+    if (result.success) {
+      toast.success(result.message || "تم الحفظ بنجاح");
+      router.push("/StudentDashboard");
+    } else {
+      // Display the error message from the backend
+      const errorMessage = result.message || "حدث خطأ أثناء الحفظ";
+      toast.error(errorMessage);
+    }
+  } catch (err: any) {
+    console.error("❌ خطأ أثناء الإرسال:", err);
+    // Display the actual error message from the backend if available
+    const errorMessage = err?.response?.data?.message || 
+                        err?.message || 
+                        "حدث خطأ غير متوقع أثناء الإرسال";
+    toast.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
+
   
   return (
     <div className="min-h-screen bg-custom-beige">
@@ -466,7 +470,7 @@ export default function StudentRegistrationPage() {
                 {/* الجنس */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    الجنس
+                    النوع
                   </label>
                   <select
                     value={gender}
@@ -474,7 +478,7 @@ export default function StudentRegistrationPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                     required
                   >
-                    <option value="">اختر الجنس</option>
+                    <option value="">اختر النوع</option>
                     <option value="ذكر">ذكر</option>
                     <option value="أنثى">أنثى</option>
                   </select>

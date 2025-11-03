@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle, AlertTriangle, Loader2, Users, GraduationCap, Building2 } from "lucide-react";
-import Toast from "@/app/Component/Toast";
+import { toast } from "react-hot-toast";
 import { Instructor, InstructorsService, CreateInstructorData, UpdateInstructorData } from "@/lib/instructors";
 import InstructorsTable from "./InstructorsTable";
 import AddInstructorModal from "./modals/AddInstructorModal";
@@ -17,8 +17,6 @@ export default function InstructorsManagement() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [showToast, setShowToast] = useState(false);
 
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
@@ -36,12 +34,10 @@ export default function InstructorsManagement() {
       if (response.success) {
         setInstructors(response.data);
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في تحميل البيانات" });
-        setShowToast(true);
+        toast.error(response.message || "حدث خطأ في تحميل البيانات");
       }
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في تحميل البيانات" });
-      setShowToast(true);
+      toast.error("حدث خطأ في تحميل البيانات");
     } finally {
       setLoading(false);
     }
@@ -51,8 +47,7 @@ export default function InstructorsManagement() {
     // Client-side guard: prevent duplicate NationalId before hitting the API
     const exists = instructors.some((i) => i.nationalId === data.nationalId);
     if (exists) {
-      setMessage({ type: "error", text: "الرقم القومي مستخدم بالفعل. لا يمكن إضافة عضو بنفس الرقم القومي." });
-      setShowToast(true);
+      toast.error("الرقم القومي مستخدم بالفعل. لا يمكن إضافة عضو بنفس الرقم القومي.");
       return;
     }
 
@@ -61,15 +56,13 @@ export default function InstructorsManagement() {
       const response = await InstructorsService.createInstructor(data);
       if (response.success) {
         await loadInstructors();
-        setMessage({ type: "success", text: response.message || "تمت الإضافة بنجاح" });
+        toast.success(response.message || "تمت الإضافة بنجاح 🎉");
         closeModal();
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في الإضافة" });
+        toast.error(response.message || "حدث خطأ في الإضافة");
       }
-      setShowToast(true);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في الإضافة" });
-      setShowToast(true);
+      toast.error("حدث خطأ في الإضافة");
     } finally {
       setSaving(false);
     }
@@ -81,14 +74,12 @@ export default function InstructorsManagement() {
       const response = await InstructorsService.updateInstructor(data);
       if (response.success) {
         await loadInstructors();
-        setMessage({ type: "success", text: response.message || "تم التحديث بنجاح" });
+        toast.success(response.message || "تم التحديث بنجاح 🎉");
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في التحديث" });
+        toast.error(response.message || "حدث خطأ في التحديث");
       }
-      setShowToast(true);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في التحديث" });
-      setShowToast(true);
+      toast.error("حدث خطأ في التحديث");
     } finally {
       setSaving(false);
     }
@@ -101,14 +92,12 @@ export default function InstructorsManagement() {
       const response = await InstructorsService.deleteInstructor(selectedInstructor.id);
       if (response.success) {
         await loadInstructors();
-        setMessage({ type: "success", text: response.message || "تم الحذف" });
+        toast.success(response.message || "تم الحذف بنجاح");
       } else {
-        setMessage({ type: "error", text: response.message || "حدث خطأ في الحذف" });
+        toast.error(response.message || "حدث خطأ في الحذف");
       }
-      setShowToast(true);
     } catch (error) {
-      setMessage({ type: "error", text: "حدث خطأ في الحذف" });
-      setShowToast(true);
+      toast.error("حدث خطأ في الحذف");
     } finally {
       setSaving(false);
     }
@@ -160,15 +149,7 @@ export default function InstructorsManagement() {
         <p className="text-gray-600">إدارة وتنظيم أعضاء هيئة التدريس في النظام الأكاديمي</p>
       </div>
 
-      {/* Message */}
-      {/* Toast for backend messages */}
-      <Toast
-        show={Boolean(message) && showToast}
-        type={message?.type === "success" ? "success" : "error"}
-        message={message?.text || ""}
-        duration={3500}
-        onClose={() => { setShowToast(false); setMessage(null); }}
-      />
+      {/* Toast messages are now handled by react-hot-toast */}
 
       {/* Simple Stats (mirroring style) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 interface DeleteIntakeConfirmModalProps {
   isOpen: boolean;
@@ -25,11 +26,11 @@ export default function DeleteIntakeConfirmModal({
     try {
       setIsDeleting(true);
       await onConfirm();
-      // The parent component will handle showing the success message
+      toast.success('تم حذف العام الدراسي بنجاح ✅');
       onClose();
     } catch (error) {
       console.error('Error in delete confirmation:', error);
-      // Re-throw the error to be handled by the parent component
+      toast.error('حدث خطأ أثناء حذف العام الدراسي ❌');
       throw error;
     } finally {
       setIsDeleting(false);

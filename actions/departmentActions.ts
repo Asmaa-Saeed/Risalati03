@@ -193,6 +193,13 @@ export const getPrograms = async (): Promise<{
   }
 };
 
+// get the masar by department id 
+// عاوزين هنا نخلي المسار ميظهرش الا لو الشخص اختار القسم
+// هننده على ال endpoint دي GET
+// /api/Degree/by-department/{departmentId}
+
+
+
 
 // 🟢 Create Department
 export const createDepartment = async (

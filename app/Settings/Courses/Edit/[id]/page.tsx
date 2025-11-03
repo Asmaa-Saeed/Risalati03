@@ -6,7 +6,6 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ArrowRight, Save, Loader2 } from "lucide-react";
-import Toast from "@/app/Component/Toast";
 import { toast } from "react-hot-toast";
 import { DepartmentsService, type Department } from "@/lib/departments";
 import { DegreesService, type Degree } from "@/lib/degrees";
@@ -46,8 +45,6 @@ export default function EditCoursePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [showToast, setShowToast] = useState(false);
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [degrees, setDegrees] = useState<Degree[]>([]);
@@ -84,7 +81,6 @@ export default function EditCoursePage() {
         setFilteredDegrees(filtered);
       }
     } catch (error) {
-      console.error('Error loading degrees:', error);
       toast.error('حدث خطأ أثناء تحميل الدرجات العلمية');
     } finally {
       setLoadingDegrees(false);
@@ -219,8 +215,7 @@ export default function EditCoursePage() {
         setPrereqRows(prereqIds);
         setInstructorRows(instructorNationalIds);
       } catch (e: any) {
-        setMessage({ type: "error", text: e?.message || "حدث خطأ أثناء تحميل البيانات" });
-        setShowToast(true);
+        toast.error('حدث خطأ أثناء تحميل البيانات');
       } finally {
         setLoading(false);
       }
@@ -276,13 +271,11 @@ export default function EditCoursePage() {
       const res = await CoursesService.updateCourse(payload as any);
       if (!res.success) throw new Error(res.message || "فشل حفظ التعديلات");
 
-      setMessage({ type: "success", text: res.message || "تم حفظ التعديلات بنجاح" });
-      setShowToast(true);
+      toast.success('تم حفظ التعديلات بنجاح');
       setTimeout(() => router.push("/Settings/Courses"), 600);
     } catch (e: any) {
       if (typeof window !== 'undefined') console.error('[EditCourse] Submit failed', { error: e, message: e?.message });
-      setMessage({ type: "error", text: e?.message || "حدث خطأ في حفظ التعديلات" });
-      setShowToast(true);
+      toast.error('حدث خطأ في حفظ التعديلات');
     } finally {
       setSaving(false);
     }
@@ -295,8 +288,7 @@ export default function EditCoursePage() {
       errors.creditHours?.message ||
       errors.semester?.message ||
       errors.instructors?.message;
-    setMessage({ type: "error", text: (firstError as string) || "تحقق من الحقول المطلوبة" });
-    setShowToast(true);
+    toast.error(firstError as string || "تحقق من الحقول المطلوبة");
   };
 
   const goBack = () => router.back();
@@ -304,14 +296,6 @@ export default function EditCoursePage() {
   return (
     <div className="min-h-screen w-full bg-custom-beige py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <Toast
-        show={Boolean(message) && showToast}
-        type={message?.type === "success" ? "success" : "error"}
-        message={message?.text || ""}
-        duration={3000}
-        onClose={() => { setShowToast(false); setMessage(null); }}
-      />
-
       <div className="flex items-center justify-between">
         <div className="text-right">
           <h1 className="text-2xl font-bold text-gray-900">تعديل مقرر</h1>

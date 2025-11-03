@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Loader2 } from 'lucide-react';
 import { Intake } from '@/actions/intakes';
+import toast from 'react-hot-toast';
 
 interface EditIntakeModalProps {
   isOpen: boolean;
@@ -63,9 +64,11 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
     setIsSubmitting(true);
     try {
       await onSave(formData);
-      onClose(); // يغلق المودال بعد الحفظ
+      toast.success('تم تحديث العام الدراسي بنجاح ✅');
+      onClose();
     } catch (error) {
       console.error('Error updating intake:', error);
+      toast.error('حدث خطأ أثناء تحديث العام الدراسي ❌');
     } finally {
       setIsSubmitting(false);
     }

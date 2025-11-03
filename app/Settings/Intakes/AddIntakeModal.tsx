@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface AddIntakeModalProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
       newErrors.endDate = 'يجب أن يكون تاريخ النهاية بعد تاريخ البداية';
     }
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('يرجى تصحيح الأخطاء قبل المتابعة');
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -45,11 +49,16 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    const loadingToast = toast.loading('جاري الحفظ...');
     try {
       await onSave(formData);
+      toast.dismiss(loadingToast);
+      toast.success('تمت إضافة العام الدراسي بنجاح 🎉');
       onClose();
     } catch (error) {
       console.error('Error adding intake:', error);
+      toast.dismiss(loadingToast);
+      toast.error('حدث خطأ أثناء إضافة العام الدراسي');
     } finally {
       setIsSubmitting(false);
     }

@@ -32,97 +32,83 @@ export default function IntakesManagement() {
 
   const loadIntakes = async () => {
     setLoadingIntakes(true);
-    const loadingToast = toast.loading('جاري تحميل البيانات...', {
-      duration: 0, // Show until manually dismissed
-    });
     
     try {
       const response = await IntakesService.getIntakes();
       if (response.succeeded) {
         setIntakes(response.data);
-        toast.success('تم تحميل البيانات بنجاح', { id: loadingToast });
-      } else {
-        toast.error(response.message || 'حدث خطأ في تحميل البيانات', { id: loadingToast });
       }
     } catch (error) {
-      toast.error('حدث خطأ في تحميل البيانات', { id: loadingToast });
+      console.error('Error loading intakes:', error);
     } finally {
       setLoadingIntakes(false);
     }
   };
 
   // ----------------- Add -----------------
-  const handleAddIntake = async (intakeData: any) => {
-    setAdding(true);
-    const loadingToast = toast.loading('جاري إضافة العام الدراسي...', {
-      duration: 0, // Show until manually dismissed
-    });
-    
-    try {
-      const response = await IntakesService.createIntake(intakeData);
-      if (response.succeeded && response.data) {
-        toast.success(response.message || 'تمت إضافة العام الدراسي بنجاح', { id: loadingToast });
-        closeModal();
-        setTimeout(() => router.refresh(), 1000);
-      } else {
-        toast.error(response.message || 'حدث خطأ في إضافة العام الدراسي', { id: loadingToast });
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'حدث خطأ في إضافة العام الدراسي', { id: loadingToast });
-    } finally {
-      setAdding(false);
-    }
-  };
+const handleAddIntake = async (intakeData: any) => {
+  setAdding(true);
 
-  // ----------------- Edit -----------------
-  const handleEditIntake = async (intakeData: any) => {
-    setEditing(true);
-    const loadingToast = toast.loading('جاري تحديث العام الدراسي...', {
-      duration: 0, // Show until manually dismissed
-    });
-    
-    try {
-      const response = await IntakesService.updateIntake(intakeData);
-      if (response.succeeded && response.data) {
-        toast.success(response.message || 'تم تحديث العام الدراسي بنجاح', { id: loadingToast });
-        closeModal();
-        setTimeout(() => router.refresh(), 1000);
-      } else {
-        toast.error(response.message || 'حدث خطأ في تحديث العام الدراسي', { id: loadingToast });
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'حدث خطأ في تحديث العام الدراسي', { id: loadingToast });
-    } finally {
-      setEditing(false);
+  try {
+    const response = await IntakesService.createIntake(intakeData);
+    if (response.succeeded && response.data) {
+      console.log(response.message || '✅ تمت إضافة العام الدراسي بنجاح');
+      closeModal();
+      setTimeout(() => router.refresh(), 1000);
+    } else {
+      console.log(response.message || '❌ حدث خطأ في إضافة العام الدراسي');
     }
-  };
+  } catch (error) {
+    console.error('❌ خطأ أثناء إضافة العام الدراسي:', error);
+  } finally {
+    setAdding(false);
+  }
+};
 
-  // ----------------- Delete -----------------
-  const handleDeleteIntake = async () => {
-    if (!selectedIntake) return;
-    setDeleting(true);
-    const loadingToast = toast.loading('جاري حذف العام الدراسي...', {
-      duration: 0, // Show until manually dismissed
-    });
-    
-    try {
-      const response = await IntakesService.deleteIntake(selectedIntake.id);
-      if (response.succeeded) {
-        await loadIntakes();
-        toast.success(response.message || 'تم حذف العام الدراسي بنجاح', { id: loadingToast });
-        closeModal();
-      } else {
-        toast.error(response.message || 'حدث خطأ في حذف العام الدراسي', { id: loadingToast });
-        if (response.message?.includes('مرتبط ببيانات أخرى')) {
-          console.log('Cannot delete intake due to related data');
-        }
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'حدث خطأ في حذف العام الدراسي', { id: loadingToast });
-    } finally {
-      setDeleting(false);
+// ----------------- Edit -----------------
+const handleEditIntake = async (intakeData: any) => {
+  setEditing(true);
+
+  try {
+    const response = await IntakesService.updateIntake(intakeData);
+    if (response.succeeded && response.data) {
+      console.log(response.message || '✅ تم تحديث العام الدراسي بنجاح');
+      closeModal();
+      setTimeout(() => router.refresh(), 1000);
+    } else {
+      console.log(response.message || '❌ حدث خطأ في تحديث العام الدراسي');
     }
-  };
+  } catch (error) {
+    console.error('❌ خطأ أثناء تحديث العام الدراسي:', error);
+  } finally {
+    setEditing(false);
+  }
+};
+
+// ----------------- Delete -----------------
+const handleDeleteIntake = async () => {
+  if (!selectedIntake) return;
+  setDeleting(true);
+
+  try {
+    const response = await IntakesService.deleteIntake(selectedIntake.id);
+    if (response.succeeded) {
+      await loadIntakes();
+      console.log(response.message || '✅ تم حذف العام الدراسي بنجاح');
+      closeModal();
+    } else {
+      console.log(response.message || '❌ حدث خطأ في حذف العام الدراسي');
+      if (response.message?.includes('مرتبط ببيانات أخرى')) {
+        console.warn('⚠️ لا يمكن حذف العام الدراسي لأنه مرتبط ببيانات أخرى');
+      }
+    }
+  } catch (error) {
+    console.error('❌ خطأ أثناء حذف العام الدراسي:', error);
+  } finally {
+    setDeleting(false);
+  }
+};
+
 
   const openModal = (type: ModalType, intake?: Intake) => {
     setActiveModal(type);

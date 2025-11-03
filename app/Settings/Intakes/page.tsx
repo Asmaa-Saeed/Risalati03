@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, AlertTriangle, Loader2, Calendar, CalendarDays } from 'lucide-react';
+import { Loader2, CalendarDays } from 'lucide-react';
 import { Intake, IntakesService } from '@/actions/intakes';
-import Toast from '@/app/Component/Toast';
+import { toast } from 'react-hot-toast';
 import IntakesTable from './IntakesTable';
 import AddIntakeModal from './AddIntakeModal';
 import EditIntakeModal from './EditIntakeModal';
@@ -14,9 +14,11 @@ type ModalType = 'add' | 'edit' | 'view' | 'delete' | null;
 
 export default function IntakesManagement() {
   const [intakes, setIntakes] = useState<Intake[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
+  const [loadingIntakes, setLoadingIntakes] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedIntake, setSelectedIntake] = useState<Intake | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,103 +31,96 @@ export default function IntakesManagement() {
   }, []);
 
   const loadIntakes = async () => {
-    setLoading(true);
+    setLoadingIntakes(true);
+    const loadingToast = toast.loading('جاري تحميل البيانات...', {
+      duration: 0, // Show until manually dismissed
+    });
+    
     try {
       const response = await IntakesService.getIntakes();
       if (response.succeeded) {
         setIntakes(response.data);
+        toast.success('تم تحميل البيانات بنجاح', { id: loadingToast });
       } else {
-        setMessage({ type: 'error', text: response.message || 'حدث خطأ في تحميل البيانات' });
+        toast.error(response.message || 'حدث خطأ في تحميل البيانات', { id: loadingToast });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'حدث خطأ في تحميل البيانات' });
+      toast.error('حدث خطأ في تحميل البيانات', { id: loadingToast });
     } finally {
-      setLoading(false);
+      setLoadingIntakes(false);
     }
   };
 
+  // ----------------- Add -----------------
   const handleAddIntake = async (intakeData: any) => {
-    setSaving(true);
+    setAdding(true);
+    const loadingToast = toast.loading('جاري إضافة العام الدراسي...', {
+      duration: 0, // Show until manually dismissed
+    });
+    
     try {
       const response = await IntakesService.createIntake(intakeData);
       if (response.succeeded && response.data) {
-        setMessage({ type: 'success', text: response.message || 'تمت إضافة العام الدراسي بنجاح' });
+        toast.success(response.message || 'تمت إضافة العام الدراسي بنجاح', { id: loadingToast });
         closeModal();
-        // Refresh the page after a short delay to show the success message
-        setTimeout(() => {
-          router.refresh();
-        }, 1000);
+        setTimeout(() => router.refresh(), 1000);
       } else {
-        setMessage({ type: 'error', text: response.message || 'حدث خطأ في إضافة العام الدراسي' });
+        toast.error(response.message || 'حدث خطأ في إضافة العام الدراسي', { id: loadingToast });
       }
     } catch (error) {
-      console.error('Add intake error:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'حدث خطأ في إضافة العام الدراسي' 
-      });
+      toast.error(error instanceof Error ? error.message : 'حدث خطأ في إضافة العام الدراسي', { id: loadingToast });
     } finally {
-      setSaving(false);
+      setAdding(false);
     }
   };
 
+  // ----------------- Edit -----------------
   const handleEditIntake = async (intakeData: any) => {
-    setSaving(true);
+    setEditing(true);
+    const loadingToast = toast.loading('جاري تحديث العام الدراسي...', {
+      duration: 0, // Show until manually dismissed
+    });
+    
     try {
       const response = await IntakesService.updateIntake(intakeData);
       if (response.succeeded && response.data) {
-        // Update the specific intake in the intakes list
-        setMessage({ type: 'success', text: response.message || 'تم تحديث العام الدراسي بنجاح' });
+        toast.success(response.message || 'تم تحديث العام الدراسي بنجاح', { id: loadingToast });
         closeModal();
-        // Refresh the page after a short delay to show the success message
-        setTimeout(() => {
-          router.refresh();
-        }, 1000);
+        setTimeout(() => router.refresh(), 1000);
       } else {
-        setMessage({ type: 'error', text: response.message || 'حدث خطأ في تحديث العام الدراسي' });
+        toast.error(response.message || 'حدث خطأ في تحديث العام الدراسي', { id: loadingToast });
       }
     } catch (error) {
-      console.error('Edit intake error:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'حدث خطأ في تحديث العام الدراسي' 
-      });
+      toast.error(error instanceof Error ? error.message : 'حدث خطأ في تحديث العام الدراسي', { id: loadingToast });
     } finally {
-      setSaving(false);
+      setEditing(false);
     }
   };
 
+  // ----------------- Delete -----------------
   const handleDeleteIntake = async () => {
     if (!selectedIntake) return;
-
-    setSaving(true);
+    setDeleting(true);
+    const loadingToast = toast.loading('جاري حذف العام الدراسي...', {
+      duration: 0, // Show until manually dismissed
+    });
+    
     try {
       const response = await IntakesService.deleteIntake(selectedIntake.id);
       if (response.succeeded) {
         await loadIntakes();
-        setMessage({ type: 'success', text: response.message || 'تم حذف العام الدراسي بنجاح' });
+        toast.success(response.message || 'تم حذف العام الدراسي بنجاح', { id: loadingToast });
         closeModal();
       } else {
-        // This will show the error message from the server
-        setMessage({ 
-          type: 'error', 
-          text: response.message || 'حدث خطأ في حذف العام الدراسي' 
-        });
-        
-        // If there's a specific error about related data, we can handle it here
+        toast.error(response.message || 'حدث خطأ في حذف العام الدراسي', { id: loadingToast });
         if (response.message?.includes('مرتبط ببيانات أخرى')) {
-          // You can add additional handling here if needed
           console.log('Cannot delete intake due to related data');
         }
       }
     } catch (error) {
-      console.error('Delete intake error:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'حدث خطأ في حذف العام الدراسي' 
-      });
+      toast.error(error instanceof Error ? error.message : 'حدث خطأ في حذف العام الدراسي', { id: loadingToast });
     } finally {
-      setSaving(false);
+      setDeleting(false);
     }
   };
 
@@ -139,6 +134,7 @@ export default function IntakesManagement() {
     setSelectedIntake(null);
   };
 
+  // ----------------- Pagination & Search -----------------
   const filteredIntakes = searchQuery
     ? intakes.filter(intake =>
         intake.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -156,7 +152,8 @@ export default function IntakesManagement() {
     setCurrentPage(page);
   };
 
-  if (loading) {
+  // ----------------- Loading Page -----------------
+  if (loadingIntakes) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -174,13 +171,7 @@ export default function IntakesManagement() {
         <p className="text-gray-600">إدارة وتنظيم جميع الأعوام الدراسية في النظام الأكاديمي</p>
       </div>
 
-      <Toast 
-        show={!!message} 
-        type={message?.type} 
-        message={message?.text || ''} 
-        onClose={() => setMessage(null)}
-      />
-
+      {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center justify-between">
@@ -195,6 +186,7 @@ export default function IntakesManagement() {
         </div>
       </div>
 
+      {/* Search + Add */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -203,48 +195,29 @@ export default function IntakesManagement() {
                 <input
                   type="text"
                   placeholder="ابحث عن عام دراسي..."
-                  className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full max-w-4xl pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <svg
-                  className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
               </div>
             </div>
             <button
               onClick={() => openModal('add')}
-              className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
+              className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap disabled:opacity-50"
+              disabled={adding}
             >
-              <span>إضافة عام دراسي جديد</span>
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
+              {adding ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري الإضافة...
+                </>
+              ) : (
+                'إضافة عام دراسي جديد'
+              )}
             </button>
           </div>
 
+          {/* Table */}
           <IntakesTable
             intakes={currentIntakes}
             onEdit={(intake) => openModal('edit', intake)}
@@ -256,29 +229,29 @@ export default function IntakesManagement() {
         </div>
       </div>
 
+      {/* Modals */}
       <AddIntakeModal
         isOpen={activeModal === 'add'}
         onClose={closeModal}
         onSave={handleAddIntake}
-        isLoading={saving}
+        isLoading={adding}
       />
 
       {selectedIntake && (
         <>
-          
           <EditIntakeModal
             isOpen={activeModal === 'edit'}
             onClose={closeModal}
             intake={selectedIntake}
             onSave={handleEditIntake}
-            isLoading={saving}
+            isLoading={editing}
           />
 
           <DeleteIntakeConfirmModal
             isOpen={activeModal === 'delete'}
             onClose={closeModal}
             onConfirm={handleDeleteIntake}
-            isLoading={saving}
+            isLoading={deleting}
             intakeName={selectedIntake.name}
           />
         </>

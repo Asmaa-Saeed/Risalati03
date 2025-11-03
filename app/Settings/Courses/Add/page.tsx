@@ -60,29 +60,30 @@ export default function AddCoursePage() {
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [degrees, setDegrees] = useState<Degree[]>([]);
+  const [filteredDegrees, setFilteredDegrees] = useState<Degree[]>([]);
   const [tracks, setTracks] = useState<LookupItem[]>([]);
   const [semesters, setSemesters] = useState<SemesterItem[]>([]);
   const [allOptions, setAllOptions] = useState<CourseItem[]>([]);
   const [instructorOptions, setInstructorOptions] = useState<Instructor[]>([]);
   const [prereqRows, setPrereqRows] = useState<string[]>([]);
   const [instructorRows, setInstructorRows] = useState<string[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
+  const [selectedDegree, setSelectedDegree] = useState<number | null>(null);
+  const [loadingDegrees, setLoadingDegrees] = useState(false);
+  const [loadingTracks, setLoadingTracks] = useState(false);
 
+  // Fetch initial data
   useEffect(() => {
     (async () => {
       try {
-        const [deptRes, degreesRes, tracksRes, semestersRes, coursesRes, instructorsRes] = await Promise.all([
+        const [deptRes, semestersRes, coursesRes, instructorsRes] = await Promise.all([
           DepartmentsService.getDepartments(),
-          DegreesService.getDegrees(),
-          TracksService.getTracks(),
           SemestersService.getSemesters(),
           CoursesService.getCourses(),
           InstructorsService.getInstructors(),
         ]);
 
         if (deptRes.success) setDepartments(deptRes.data);
-        if (degreesRes.succeeded) setDegrees(degreesRes.data);
-        if (tracksRes.succeeded)
-          setTracks(tracksRes.data.map((t: any) => ({ id: t.id, value: t.name })));
         if (semestersRes.success) setSemesters(semestersRes.data);
         if (coursesRes.success) setAllOptions(coursesRes.data);
         if (instructorsRes.success) setInstructorOptions(instructorsRes.data as any);
@@ -93,6 +94,56 @@ export default function AddCoursePage() {
       }
     })();
   }, []);
+
+  // Fetch degrees when department changes
+  const handleDepartmentChange = async (departmentId: number) => {
+    setSelectedDepartment(departmentId);
+    setSelectedDegree(null);
+    setFilteredDegrees([]);
+    setTracks([]);
+    setValue('degreeId', 0);
+    setValue('msarId', 0);
+
+    if (!departmentId) return;
+    
+    setLoadingDegrees(true);
+    try {
+      // First, get all degrees
+      const degreesRes = await DegreesService.getDegrees();
+      if (degreesRes.succeeded) {
+        // Filter degrees by the selected department on the client side
+        const filtered = degreesRes.data.filter(degree => degree.departmentId === departmentId);
+        setFilteredDegrees(filtered);
+      }
+    } catch (error) {
+      console.error('Error loading degrees:', error);
+      toast.error('حدث خطأ أثناء تحميل الدرجات العلمية');
+    } finally {
+      setLoadingDegrees(false);
+    }
+  };
+
+  // Handle degree selection change
+const handleDegreeChange = async (degreeId: number) => {
+  setSelectedDegree(degreeId);
+  setTracks([]);
+  setValue('msarId', 0);
+
+  if (!degreeId) return;
+  
+  setLoadingTracks(true);
+  try {
+    const tracksRes = await TracksService.getTracksByDegree(degreeId);
+    if (tracksRes.succeeded) {
+      setTracks(tracksRes.data.map((t: any) => ({ id: t.id, value: t.value })));
+    }
+  } catch (error) {
+    toast.error('حدث خطأ أثناء تحميل المسارات');
+  } finally {
+    setLoadingTracks(false);
+  }
+};
+
 
   const filteredTracks = useMemo(() => {
     return tracks; // حالياً ما بنفلترش، لكن ده بيسمح لنا نفلتر لاحقاً حسب الدرجة أو القسم
@@ -263,33 +314,96 @@ export default function AddCoursePage() {
                   className="w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 border-gray-200 hover:border-gray-300"
                 />
               </div>
-              {/* <div>
+              {/* -------------------- Degree and Department -------------------- */}
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">القسم</label>
-                <select {...register("departmentId", { valueAsNumber: true })} className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.departmentId ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}>
+                <select 
+                  {...register("departmentId", { 
+                    valueAsNumber: true,
+                    onChange: (e) => handleDepartmentChange(Number(e.target.value))
+                  })} 
+                  className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.departmentId ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}
+                >
                   <option value={0}>اختر القسم</option>
                   {departments.map((d) => (
-                    <option key={d.id} value={parseInt(d.id)}>{d.name}</option>
+                    <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
                 </select>
                 {errors.departmentId && <p className="mt-2 text-sm text-red-600">{errors.departmentId.message}</p>}
-              </div> */}
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">الدرجة العلمية</label>
-                <select {...register("degreeId", { valueAsNumber: true })} className="w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 border-gray-200 hover:border-gray-300">
-                  <option value="">بدون درجة</option>
-                  {degrees.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div> */}
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">المسار *</label>
-                <select {...register("msarId", { valueAsNumber: true })} className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${errors.msarId ? "border-red-500" : "border-gray-200 hover:border-gray-300"}`}>
-                  <option value={0}>اختر المسار</option>
-                  {filteredTracks.map((t) => (
-                    <option key={t.id} value={t.id}>{t.value}</option>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  الدرجة العلمية
+                  {selectedDepartment && loadingDegrees && (
+                    <span className="text-xs text-gray-500 mr-2">جاري التحميل...</span>
+                  )}
+                </label>
+                <select 
+                  {...register("degreeId", { 
+                    valueAsNumber: true,
+                    disabled: !selectedDepartment || loadingDegrees || filteredDegrees.length === 0,
+                    onChange: (e) => handleDegreeChange(Number(e.target.value))
+                  })} 
+                  className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${
+                    errors.degreeId ? "border-red-500" : 
+                    !selectedDepartment || filteredDegrees.length === 0 ? "bg-gray-50 cursor-not-allowed" : 
+                    "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <option value={0}>
+                    {filteredDegrees.length === 0 && selectedDepartment 
+                      ? "لا توجد درجات علمية متاحة لهذا القسم" 
+                      : "اختر الدرجة العلمية"}
+                  </option>
+                  {filteredDegrees.map((degree) => (
+                    <option key={degree.id} value={degree.id}>
+                      {degree.name}
+                    </option>
                   ))}
                 </select>
+                {selectedDepartment && !loadingDegrees && filteredDegrees.length === 0 && (
+                  <p className="mt-2 text-sm text-red-600">
+                    ⓘ هذا القسم لا يحتوي على درجات علمية. الرجاء اختيار قسم آخر.
+                  </p>
+                )}
+                {errors.degreeId && <p className="mt-2 text-sm text-red-600">{errors.degreeId.message}</p>}
+              </div>
+              {/* -------------------- Track -------------------- */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  المسار *
+                  {selectedDegree && loadingTracks && (
+                    <span className="text-xs text-gray-500 mr-2">جاري التحميل...</span>
+                  )}
+                </label>
+                <select 
+                  {...register("msarId", { 
+                    valueAsNumber: true,
+                    disabled: !selectedDegree || loadingTracks || tracks.length === 0
+                  })} 
+                  className={`w-full px-5 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 ${
+                    errors.msarId ? "border-red-500" : 
+                    !selectedDegree || tracks.length === 0 ? "bg-gray-50 cursor-not-allowed" : 
+                    "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <option value={0}>
+                    {tracks.length === 0 && selectedDegree
+                      ? "لا توجد مسارات متاحة لهذه الدرجة العلمية"
+                      : "اختر المسار"}
+                  </option>
+                  {tracks.map((track) => (
+                    <option key={track.id} value={track.id}>
+                      {track.value}
+                    </option>
+                  ))}
+                </select>
+                {selectedDegree && !loadingTracks && tracks.length === 0 && (
+                  <p className="mt-2 text-sm text-red-600">
+                    ⓘ لا توجد مسارات متاحة للدرجة العلمية المحددة. الرجاء اختيار درجة علمية أخرى.
+                  </p>
+                )}
                 {errors.msarId && <p className="mt-2 text-sm text-red-600">{errors.msarId.message}</p>}
               </div>
 

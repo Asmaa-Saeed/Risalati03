@@ -10,76 +10,46 @@ interface AddIntakeModalProps {
 }
 
 export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: AddIntakeModalProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    startDate: '',
-    endDate: '',
-  });
+  const [formData, setFormData] = useState({ name: '', startDate: '', endDate: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      // Reset form when modal is closed
-      setFormData({
-        name: '',
-        startDate: '',
-        endDate: '',
-      });
+    if (isOpen) {
+      setFormData({ name: '', startDate: '', endDate: '' });
       setErrors({});
     }
   }, [isOpen]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'اسم العام الدراسي مطلوب';
-    }
-    
-    if (!formData.startDate) {
-      newErrors.startDate = 'تاريخ البداية مطلوب';
-    }
-    
+    if (!formData.name.trim()) newErrors.name = 'اسم العام الدراسي مطلوب';
+    if (!formData.startDate) newErrors.startDate = 'تاريخ البداية مطلوب';
     if (!formData.endDate) {
       newErrors.endDate = 'تاريخ النهاية مطلوب';
     } else if (formData.startDate && formData.endDate < formData.startDate) {
       newErrors.endDate = 'يجب أن يكون تاريخ النهاية بعد تاريخ البداية';
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: '',
-      });
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
     try {
       await onSave(formData);
       onClose();
     } catch (error) {
-      console.error('Error saving intake:', error);
+      console.error('Error adding intake:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -111,9 +81,12 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-right align-middle shadow-xl transition-all">
+              <Dialog.Panel
+                className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-right align-middle shadow-xl transition-all"
+                aria-busy={isSubmitting}
+              >
                 <div className="flex items-center justify-between mb-6">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                  <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
                     إضافة عام دراسي جديد
                   </Dialog.Title>
                   <button
@@ -132,6 +105,7 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
                       اسم العام الدراسي <span className="text-red-500">*</span>
                     </label>
                     <input
+                      autoFocus
                       type="text"
                       id="name"
                       name="name"
@@ -180,7 +154,7 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
                     {errors.endDate && <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>}
                   </div>
 
-                  <div className="mt-6 flex items-center justify-end space-x-3 space-x-reverse">
+                  <div className="mt-6 flex items-center justify-between space-x-3 space-x-reverse">
                     <button
                       type="button"
                       onClick={onClose}
@@ -194,7 +168,7 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
                       disabled={isLoading || isSubmitting}
                       className="inline-flex items-center justify-center rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
                     >
-                      {(isLoading || isSubmitting) ? (
+                      {isSubmitting ? (
                         <>
                           <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                           جاري الحفظ...

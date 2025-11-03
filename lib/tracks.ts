@@ -118,6 +118,58 @@ export class TracksService {
     }
   }
 
+  /**
+   * Fetches tracks by degree ID using the GetMsaratByDegreeId endpoint
+   * @param degreeId The ID of the degree to get tracks for
+   * @returns Promise with tracks data or error information
+   */
+  static async getTracksByDegree(degreeId: number): Promise<{ 
+    succeeded: boolean; 
+    data: LookupItem[]; 
+    message?: string; 
+    errors?: string[] 
+  }> {
+    await this.delay();
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) {
+        return {
+          succeeded: false,
+          data: [],
+          message: 'يجب تسجيل الدخول أولاً',
+          errors: ['Not authenticated']
+        };
+      }
+
+      const { getMsaratByDegreeId } = await import('@/actions/trackActions');
+      const result = await getMsaratByDegreeId(degreeId, token);
+
+      if (result.success && result.data) {
+        return {
+          succeeded: true,
+          data: result.data,
+          message: 'تم جلب المسارات بنجاح',
+          errors: []
+        };
+      }
+
+      return {
+        succeeded: false,
+        data: [],
+        message: result.message || 'حدث خطأ في جلب المسارات',
+        errors: [result.message || 'Unknown error']
+      };
+    } catch (error) {
+      console.error('Error in getTracksByDegree:', error);
+      return {
+        succeeded: false,
+        data: [],
+        message: 'حدث خطأ في جلب قائمة المسارات',
+        errors: ['Error fetching tracks by degree']
+      };
+    }
+  }
+
   static async getTrack(id: number): Promise<TrackApiResponse> {
     await this.delay();
     try {

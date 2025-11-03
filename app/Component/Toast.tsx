@@ -13,29 +13,29 @@ interface ToastProps {
   duration?: number; // ms
   onClose: () => void;
 }
-
 const typeStyles = {
   success: {
-    bgColor: "bg-[#10b981]", // Exact green from react-hot-toast
-    textColor: "text-white",
+    bgColor: "!bg-[#10b981]", // force green
+    textColor: "!text-white",
     icon: <CheckCircle2 size={20} />,
   },
   error: {
-    bgColor: "bg-[#ef4444]", // Slightly darker red
-    textColor: "text-white",
+    bgColor: "!bg-[#ef4444]",
+    textColor: "!text-white",
     icon: <AlertTriangle size={20} />,
   },
   info: {
-    bgColor: "bg-[#3b82f6]", // Standard blue
-    textColor: "text-white",
+    bgColor: "!bg-[#3b82f6]",
+    textColor: "!text-white",
     icon: <Info size={20} />,
   },
   warning: {
-    bgColor: "bg-[#eab308]", // Standard yellow
-    textColor: "text-white",
+    bgColor: "!bg-[#eab308]",
+    textColor: "!text-white",
     icon: <AlertTriangle size={20} />,
   },
 } as const;
+
 
 export default function Toast({ show, type = "info", message, duration = 3000, onClose }: ToastProps) {
   // Ensure type is one of the valid types, default to 'info' if invalid

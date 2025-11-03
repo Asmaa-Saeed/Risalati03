@@ -101,14 +101,23 @@ export const getMsaratByDegreeId = async (
       return { success: false, message: "الرجاء تسجيل الدخول أولاً" };
     }
 
-    const url = `${API_URL}/Lookups/GetMsaratByDegreeId?degreeId=${encodeURIComponent(degreeId)}`;
+    const url = `${API_URL}/Lookups/GetMsaratByDegreeId?id=${encodeURIComponent(degreeId)}`
+    console.log("🔹 Sending get msarat by degreeId request to:", url);
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
+        // ❌ لا تضيف Content-Type مع GET
         Authorization: `Bearer ${token}`,
       },
     });
+
+    console.log("🔹 Msarat by degreeId Response status:", response.status);
+
+    // نقرأ النص فقط مرة واحدة
+    const text = await response.text();
+    console.log("🔹 Msarat by degreeId Response body:", text);
+    
 
     if (!response.ok) {
       throw new Error(
@@ -116,9 +125,10 @@ export const getMsaratByDegreeId = async (
       );
     }
 
+    // نحاول تحويل النص إلى JSON يدويًا
     let data: any;
     try {
-      data = await response.json();
+      data = JSON.parse(text);
     } catch {
       throw new Error("Invalid JSON response from GetMsaratByDegreeId API");
     }
@@ -129,11 +139,12 @@ export const getMsaratByDegreeId = async (
       ? data.data
       : [];
 
-    // Normalize to LookupItem[] ensuring 'value' is populated (fall back to 'name')
     const arr: LookupItem[] = rawArray.map((item: any) => ({
       id: Number(item.id ?? item.Id ?? 0),
       value: String(item.value ?? item.Value ?? item.name ?? item.Name ?? ""),
     }));
+
+    console.log("✅ Msarat normalized array:", arr);
 
     return { success: true, data: arr };
   } catch (error) {
@@ -141,6 +152,7 @@ export const getMsaratByDegreeId = async (
     return { success: false, message: (error as Error).message };
   }
 };
+
 
 // 🟢 Create Track - Matches API specification
 // POST /api/Msar

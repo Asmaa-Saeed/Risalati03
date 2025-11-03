@@ -8,80 +8,62 @@ interface EditIntakeModalProps {
   onClose: () => void;
   intake: Intake;
   onSave: (data: { id: number; name: string; startDate: string; endDate: string }) => Promise<void>;
-  isLoading: boolean;
+  isLoading: boolean; // حالة تحميل خارجية
 }
 
 export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoading }: EditIntakeModalProps) {
   const [formData, setFormData] = useState({
-    id: intake?.id || 0,
-    name: intake?.name || '',
-    startDate: intake?.startDate ? intake.startDate.split('T')[0] : '',
-    endDate: intake?.endDate ? intake.endDate.split('T')[0] : '',
+    id: 0,
+    name: '',
+    startDate: '',
+    endDate: '',
   });
-  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update form data when intake prop changes
+  // تحديث formData عند فتح المودال
   useEffect(() => {
-    if (intake) {
+    if (isOpen && intake) {
       setFormData({
         id: intake.id,
         name: intake.name,
         startDate: intake.startDate.split('T')[0],
         endDate: intake.endDate.split('T')[0],
       });
+      setErrors({});
     }
-  }, [intake]);
+  }, [isOpen, intake]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'اسم العام الدراسي مطلوب';
-    }
-    
-    if (!formData.startDate) {
-      newErrors.startDate = 'تاريخ البداية مطلوب';
-    }
-    
+
+    if (!formData.name.trim()) newErrors.name = 'اسم العام الدراسي مطلوب';
+    if (!formData.startDate) newErrors.startDate = 'تاريخ البداية مطلوب';
     if (!formData.endDate) {
       newErrors.endDate = 'تاريخ النهاية مطلوب';
     } else if (formData.startDate && formData.endDate < formData.startDate) {
       newErrors.endDate = 'يجب أن يكون تاريخ النهاية بعد تاريخ البداية';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: '',
-      });
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
     try {
       await onSave(formData);
-      onClose();
+      onClose(); // يغلق المودال بعد الحفظ
     } catch (error) {
       console.error('Error updating intake:', error);
     } finally {
@@ -117,9 +99,12 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-right align-middle shadow-xl transition-all">
+              <Dialog.Panel
+                className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-right align-middle shadow-xl transition-all"
+                aria-busy={isSubmitting}
+              >
                 <div className="flex items-center justify-between mb-6">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                  <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
                     تعديل العام الدراسي
                   </Dialog.Title>
                   <button
@@ -133,6 +118,7 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* الاسم */}
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       اسم العام الدراسي <span className="text-red-500">*</span>
@@ -141,6 +127,7 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
                       type="text"
                       id="name"
                       name="name"
+                      autoFocus
                       value={formData.name}
                       onChange={handleInputChange}
                       className={`mt-1 block w-full rounded-md border ${
@@ -151,6 +138,7 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
                     {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                   </div>
 
+                  {/* تاريخ البداية */}
                   <div>
                     <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
                       تاريخ البداية <span className="text-red-500">*</span>
@@ -168,6 +156,7 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
                     {errors.startDate && <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>}
                   </div>
 
+                  {/* تاريخ النهاية */}
                   <div>
                     <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
                       تاريخ النهاية <span className="text-red-500">*</span>
@@ -186,6 +175,7 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
                     {errors.endDate && <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>}
                   </div>
 
+                  {/* الأزرار */}
                   <div className="mt-6 flex items-center justify-between space-x-3 space-x-reverse">
                     <button
                       type="button"
@@ -200,7 +190,7 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
                       disabled={isLoading || isSubmitting}
                       className="inline-flex items-center justify-center rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
                     >
-                      {(isLoading || isSubmitting) ? (
+                      {isSubmitting ? (
                         <>
                           <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                           جاري الحفظ...

@@ -51,8 +51,6 @@ interface Filters {
   msarId: number | null;
 }
 
-// In Next.js App Router, page components should not accept custom props.
-
 const DetailItem: React.FC<{
   label: string;
   value: string | number | null;
@@ -167,16 +165,17 @@ const StudentDetailsModal: React.FC<{
   </div>
 );
 
-export default function StudentsComponent() {
+interface Props {
+  filters: {
+    degreeId: number | null;
+    msarId: number | null;
+  };
+}
+
+export default function StudentsComponent({ filters }: Props) {
   const params = useSearchParams();
   const deptParam = params.get("departmentId");
   const departmentId = deptParam ? Number(deptParam) : null;
-
-  // Derive filters from URL params (if present)
-  const filters: Filters = {
-    degreeId: params.get("degreeId") ? Number(params.get("degreeId")) : null,
-    msarId: params.get("msarId") ? Number(params.get("msarId")) : null,
-  };
 
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -285,25 +284,6 @@ export default function StudentsComponent() {
 
       if (departmentId != null)
         queryParams.push(`deptId=${encodeURIComponent(String(departmentId))}`);
-      if (selectedProgram != null)
-        queryParams.push(
-          `programId=${encodeURIComponent(String(selectedProgram))}`
-        );
-      if (selectedDepartment != null) {
-        const deptName = departments.find(
-          (d) => d.id === selectedDepartment
-        )?.name;
-        if (deptName)
-          queryParams.push(`department=${encodeURIComponent(deptName)}`);
-      }
-      if (selectedStatus != null) {
-        const statusVal = statuses.find((s) => s.id === selectedStatus)?.value;
-        if (statusVal)
-          queryParams.push(`status=${encodeURIComponent(statusVal)}`);
-      }
-      if (searchNationalId)
-        queryParams.push(`nationalId=${encodeURIComponent(searchNationalId)}`);
-
       if (filters?.degreeId != null)
         queryParams.push(
           `degreeId=${encodeURIComponent(String(filters.degreeId))}`
@@ -312,6 +292,8 @@ export default function StudentsComponent() {
         queryParams.push(
           `msarId=${encodeURIComponent(String(filters.msarId))}`
         );
+      if (searchNationalId)
+        queryParams.push(`nationalId=${encodeURIComponent(searchNationalId)}`);
 
       let url = `${apiUrl}/Student`;
       if (queryParams.length > 0) url += `?${queryParams.join("&")}`;
@@ -342,8 +324,7 @@ export default function StudentsComponent() {
   }, [
     departmentId,
     searchNationalId,
-    filters.degreeId,
-    filters.msarId,
+    filters,
     selectedProgram,
     selectedDepartment,
     selectedStatus,
@@ -375,123 +356,9 @@ export default function StudentsComponent() {
     }
   };
 
-  // Add student handlers
   const openAddModal = () => {
-    setNewStudent({
-      nationalId: "",
-      firstName: "",
-      secondName: "",
-      thirdName: "",
-      email: "",
-      nationality: null,
-      dateOfBirth: "",
-      placeOfBirth: "",
-      profession: "",
-      phone: "",
-      address: "",
-      militaryService: null,
-      gpa: null,
-      grade: null,
-      major: null,
-      notes: "",
-      collegeId: null,
-      universityId: null,
-      qualifications: [],
-    });
-    setShowAddModal(true);
+    router.push("../Sections/student-registration");
   };
-
-  const addQualification = () => {
-    setNewStudent((prev: any) => ({
-      ...prev,
-      qualifications: [
-        ...(prev.qualifications || []),
-        { qualification: null, institution: "", grade: null, dateObtained: "" },
-      ],
-    }));
-  };
-
-  const removeQualification = (index: number) => {
-    setNewStudent((prev: any) => {
-      const q = [...(prev.qualifications || [])];
-      q.splice(index, 1);
-      return { ...prev, qualifications: q };
-    });
-  };
-
-  const updateQualification = (index: number, key: string, value: any) => {
-    setNewStudent((prev: any) => {
-      const q = [...(prev.qualifications || [])];
-      q[index] = { ...q[index], [key]: value };
-      return { ...prev, qualifications: q };
-    });
-  };
-
-  const handleAddStudent = async () => {
-    // minimal validation
-    if (!newStudent.nationalId || !newStudent.firstName) {
-      return alert("الرجاء إدخال الرقم القومي والاسم الأول على الأقل");
-    }
-    setAdding(true);
-    try {
-      const body = {
-        nationalId: String(newStudent.nationalId),
-        firstName: newStudent.firstName,
-        secondName: newStudent.secondName,
-        thirdName: newStudent.thirdName,
-        email: newStudent.email,
-        nationality: newStudent.nationality,
-        dateOfBirth: newStudent.dateOfBirth,
-        placeOfBirth: newStudent.placeOfBirth,
-        profession: newStudent.profession,
-        phone: newStudent.phone,
-        address: newStudent.address,
-        militaryService: newStudent.militaryService,
-        gpa: newStudent.gpa,
-        grade: newStudent.grade,
-        major: newStudent.major,
-        notes: newStudent.notes,
-        collegeId: newStudent.collegeId ?? 0,
-        universityId: newStudent.universityId ?? 0,
-        qualifications: (newStudent.qualifications || []).map((q: any) => ({
-          qualification: q.qualification,
-          institution: q.institution,
-          grade: q.grade,
-          dateObtained: q.dateObtained,
-        })),
-      };
-
-      const res = await fetch(`${apiUrl}/Student/add`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify(body),
-      });
-
-      const text = await res.text();
-      let result: any = {};
-      try {
-        result = text ? JSON.parse(text) : {};
-      } catch {
-        result = {};
-      }
-
-      if (!res.ok || (result && result.succeeded === false)) {
-        const msg = result?.message || `فشل الإضافة (${res.status})`;
-        throw new Error(msg);
-      }
-
-      alert("✅ تم إضافة الطالب بنجاح");
-      setShowAddModal(false);
-      // refresh table
-      fetchStudents();
-    } catch (e: any) {
-      console.error("add student error:", e);
-      alert(e?.message || "حدث خطأ أثناء إضافة الطالب");
-    } finally {
-      setAdding(false);
-    }
-  };
-
   return (
     <div className="w-full p-4">
       <div className="flex justify-between items-center mb-4">
@@ -608,216 +475,6 @@ export default function StudentsComponent() {
           student={selectedStudent}
           onClose={() => setSelectedStudent(null)}
         />
-      )}
-
-      {/* Add student modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 px-2">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b flex justify-between items-center bg-custom-teal text-white sticky top-0">
-              <h2 className="text-lg font-bold">إضافة طالب جديد</h2>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-white hover:text-gray-200"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input
-                  placeholder="الرقم القومي *"
-                  value={newStudent.nationalId}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, nationalId: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="الاسم الأول *"
-                  value={newStudent.firstName}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, firstName: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="الاسم الثاني"
-                  value={newStudent.secondName}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, secondName: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="الاسم الثالث"
-                  value={newStudent.thirdName}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, thirdName: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="البريد الإلكتروني"
-                  value={newStudent.email}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, email: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="رقم الهاتف"
-                  value={newStudent.phone}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, phone: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="تاريخ الميلاد (YYYY-MM-DD)"
-                  value={newStudent.dateOfBirth}
-                  onChange={(e) =>
-                    setNewStudent({
-                      ...newStudent,
-                      dateOfBirth: e.target.value,
-                    })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="المهنة"
-                  value={newStudent.profession}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, profession: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="العنوان"
-                  value={newStudent.address}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, address: e.target.value })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-                <input
-                  placeholder="المعدل التراكمي"
-                  type="number"
-                  step="0.01"
-                  value={newStudent.gpa ?? ""}
-                  onChange={(e) =>
-                    setNewStudent({
-                      ...newStudent,
-                      gpa: e.target.value ? Number(e.target.value) : null,
-                    })
-                  }
-                  className="border rounded px-3 py-2"
-                />
-              </div>
-
-              <div className="border-t pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold">المؤهلات السابقة (اختياري)</h4>
-                  <button
-                    onClick={addQualification}
-                    className="bg-blue-600 text-white px-3 py-1 rounded"
-                  >
-                    إضافة مؤهل
-                  </button>
-                </div>
-
-                {(newStudent.qualifications || []).length === 0 && (
-                  <p className="text-sm text-gray-500">لا توجد مؤهلات مضافة.</p>
-                )}
-
-                {(newStudent.qualifications || []).map(
-                  (q: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end mb-2"
-                    >
-                      <input
-                        placeholder="كود المؤهل (رقم)"
-                        type="number"
-                        value={q.qualification ?? ""}
-                        onChange={(e) =>
-                          updateQualification(
-                            idx,
-                            "qualification",
-                            e.target.value ? Number(e.target.value) : null
-                          )
-                        }
-                        className="border rounded px-2 py-1"
-                      />
-                      <input
-                        placeholder="المؤسسة"
-                        value={q.institution || ""}
-                        onChange={(e) =>
-                          updateQualification(
-                            idx,
-                            "institution",
-                            e.target.value
-                          )
-                        }
-                        className="border rounded px-2 py-1"
-                      />
-                      <input
-                        placeholder="التقدير (رقم)"
-                        type="number"
-                        value={q.grade ?? ""}
-                        onChange={(e) =>
-                          updateQualification(
-                            idx,
-                            "grade",
-                            e.target.value ? Number(e.target.value) : null
-                          )
-                        }
-                        className="border rounded px-2 py-1"
-                      />
-                      <div className="flex gap-2">
-                        <input
-                          placeholder="تاريخ الحصول (YYYY-MM-DD)"
-                          value={q.dateObtained || ""}
-                          onChange={(e) =>
-                            updateQualification(
-                              idx,
-                              "dateObtained",
-                              e.target.value
-                            )
-                          }
-                          className="border rounded px-2 py-1"
-                        />
-                        <button
-                          onClick={() => removeQualification(idx)}
-                          className="bg-red-500 text-white px-2 py-1 rounded"
-                        >
-                          حذف
-                        </button>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="bg-gray-300 px-4 py-2 rounded"
-                >
-                  إلغاء
-                </button>
-                <button
-                  onClick={handleAddStudent}
-                  disabled={adding}
-                  className="bg-custom-teal text-white px-4 py-2 rounded"
-                >
-                  {adding ? "جارٍ الإضافة..." : "إضافة وحفظ"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

@@ -14,6 +14,9 @@ export default function StudentRegistrationPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [gender, setGender] = useState<string>("");
 
+  // جديد: معرفة هل المستخدم أدمن
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
   // ====== Lookups ======
   const [nationalities, setNationalities] = useState<any[]>([]);
   const [majors, setMajors] = useState<any[]>([]);
@@ -86,12 +89,17 @@ export default function StudentRegistrationPage() {
     }
   };
 
+  // نقرأ التوكن ونحدد هل المستخدم أدمن، ثم نجلب lookup data
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
       return;
     }
+
+    // decode role quickly (الدالة موجودة أدناه)
+    const role = getRoleFromToken(token);
+    setIsAdmin(Boolean(role && String(role).toLowerCase().includes("admin")));
 
     fetchLookupData("/Lookups/nationalities", setNationalities, token);
     fetchLookupData("/Lookups/majors", setMajors, token);
@@ -102,10 +110,13 @@ export default function StudentRegistrationPage() {
     fetchLookupData("/Lookups/universities", setUniversities, token);
   }, [router]);
 
-  // ====== Fetch Student Data by National ID ======
+  // إذا المستخدم ليس أدمن ونوجد nationalId مخزن نملأ الحقل تلقائياً.
+  // أما لو أدمن نترك الحقول فاضية ليضيف كل شيء بنفسه
   useEffect(() => {
     const storedNationalId = localStorage.getItem("nationalId");
-    if (storedNationalId) {
+    if (!storedNationalId) return;
+
+    if (!isAdmin) {
       setFormData((prev) => ({ ...prev, nationalId: storedNationalId }));
 
       const fetchStudentData = async () => {
@@ -114,12 +125,9 @@ export default function StudentRegistrationPage() {
           const res = await fetch(
             `${APIURL}/Student/getByNationalNum/${storedNationalId}`,
             { headers: { Authorization: `Bearer ${token}` } }
-
           );
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          console.log(res);
           const data = await res.json();
-          console.log(data);
 
           setFormData((prev) => ({
             ...prev,
@@ -140,8 +148,11 @@ export default function StudentRegistrationPage() {
       };
 
       fetchStudentData();
+    } else {
+      // admin: لا نملأ شيئاً — يجب أن يدخل كل الحقول بنفسه
+      setFormData((prev) => ({ ...prev, nationalId: "" }));
     }
-  }, []);
+  }, [isAdmin]);
 
   // ====== Handle Input Change ======
   const handleChange = (
@@ -152,6 +163,8 @@ export default function StudentRegistrationPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleGoBack = () => router.back();
 
   // ====== Handle Qualifications Change ======
   const handleQualificationChange = (
@@ -181,86 +194,168 @@ export default function StudentRegistrationPage() {
     setFormData({ ...formData, qualifications: updated });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setMessage(null);
-
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("الرجاء تسجيل الدخول أولاً");
-      setLoading(false);
-      return;
+  function getRoleFromToken(token: string | null): string | null {
+    if (!token) return null;
+    try {
+      const parts = token.split(".");
+      if (parts.length < 2) return null;
+      const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const json = JSON.parse(
+        decodeURIComponent(
+          atob(payload)
+            .split("")
+            .map(function (c) {
+              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join("")
+        )
+      );
+      // common claims
+      if (typeof json.role === "string") return json.role;
+      if (Array.isArray(json.role) && json.role.length) return json.role[0];
+      if (typeof json.roles === "string") return json.roles;
+      if (Array.isArray(json.roles) && json.roles.length) return json.roles[0];
+      // MS schema
+      const msRole =
+        json["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+      if (typeof msRole === "string") return msRole;
+      if (Array.isArray(msRole) && msRole.length) return msRole[0];
+    } catch (e) {
+      // ignore decode errors
     }
-
-    if (!formData.qualifications.length) {
-      toast.error("الرجاء إضافة مؤهل واحد على الأقل");
-      setLoading(false);
-      return;
-    }
-
-    const result = await addStudent(formData, token);
-    console.log("📌 API Result:", result);
-
-    if (result.success) {
-      toast.success(result.message || "تم الحفظ بنجاح");
-      router.push("/StudentDashboard");
-    } else {
-      // Display the error message from the backend
-      const errorMessage = result.message || "حدث خطأ أثناء الحفظ";
-      toast.error(errorMessage);
-    }
-  } catch (err: any) {
-    console.error("❌ خطأ أثناء الإرسال:", err);
-    // Display the actual error message from the backend if available
-    const errorMessage = err?.response?.data?.message || 
-                        err?.message || 
-                        "حدث خطأ غير متوقع أثناء الإرسال";
-    toast.error(errorMessage);
-  } finally {
-    setLoading(false);
+    return null;
   }
-};
 
-  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    // إذا أدمن: نتأكد أن كل الحقول المطلوبة موجودة (لا شيء static)
+    if (isAdmin) {
+      const requiredForAdmin = [
+        "nationalId",
+        "firstName",
+        "secondName",
+        "thirdName",
+        "email",
+        "nationality",
+        "dateOfBirth",
+        "placeOfBirth",
+        "phone",
+        "address",
+        "grade",
+        "universityId",
+        "collegeId",
+      ];
+
+      const missing = requiredForAdmin.filter(
+        (k) =>
+          !(formData as any)[k] || String((formData as any)[k]).trim() === ""
+      );
+
+      // بالإضافة: تحقق أن هناك على الأقل مؤهل واحد مكتمل
+      const incompleteQualification = formData.qualifications.some(
+        (q) => !q.qualification || !q.institution || !q.grade || !q.dateObtained
+      );
+
+      if (
+        missing.length ||
+        formData.qualifications.length === 0 ||
+        incompleteQualification
+      ) {
+        toast.error(
+          `كمل الحقول المطلوبة للأدمن. الحقول الناقصة: ${
+            missing.join(", ") || "مؤهلات"
+          }`
+        );
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("الرجاء تسجيل الدخول أولاً");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.qualifications.length) {
+        toast.error("الرجاء إضافة مؤهل واحد على الأقل");
+        setLoading(false);
+        return;
+      }
+
+      const result = await addStudent(formData, token);
+      console.log("📌 API Result:", result);
+
+      if (result.success) {
+        toast.success(result.message || "تم الحفظ بنجاح");
+        const tokenRole = getRoleFromToken(token);
+        const role = tokenRole;
+
+        const isAdmin = role && String(role).toLowerCase().includes("admin");
+
+        if (isAdmin) {
+          router.back(); // صفحة الطلاب للمشرف/Admin
+        } else {
+          router.push("/StudentDashboard"); // صفحة الطالب العادية
+        }
+      } else {
+        const errorMessage = result.message || "حدث خطأ أثناء الحفظ";
+        toast.error(errorMessage);
+      }
+    } catch (err: any) {
+      console.error("❌ خطأ أثناء الإرسال:", err);
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "حدث خطأ غير متوقع أثناء الإرسال";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-custom-beige">
-    {/* Header */}
-            <div className="py-4 md:py-6 px-4 md:px-6">
-              <div className="flex flex-col items-center space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center max-w-6xl mx-auto">
-                {/* University Logo - Hidden on mobile */}
-                <div className="hidden md:block w-32 lg:w-40">
-                  <Image
-                    src="/University-Logo.png"
-                    alt="شعار الجامعة"
-                    width={160}
-                    height={80}
-                    className="w-full h-auto object-contain"
-                    priority
-                  />
-                </div>
-                
-                {/* Title - Always centered */}
-                <div className="text-center">
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
-                    البيانات الشخصية للطالب
-                  </h1>
-                </div>
-                
-                {/* Faculty Logo - Hidden on mobile */}
-                <div className="hidden md:block w-32 lg:w-40">
-                  <Image
-                    src="/Faculty-Logo.png"
-                    alt="شعار الكلية"
-                    width={160}
-                    height={80}
-                    className="w-full h-auto object-contain"
-                    priority
-                  />
-                </div>
-              </div>
-            </div>
+      {/* Header */}
+      <div className="py-4 md:py-6 px-4 md:px-6">
+        <div className="flex flex-col items-center space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center max-w-6xl mx-auto">
+          {/* University Logo - Hidden on mobile */}
+          <div className="hidden md:block w-32 lg:w-40">
+            <Image
+              src="/University-Logo.png"
+              alt="شعار الجامعة"
+              width={160}
+              height={80}
+              className="w-full h-auto object-contain"
+              priority
+            />
+          </div>
+
+          {/* Title - Always centered */}
+          <div className="text-center">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+              البيانات الشخصية للطالب
+            </h1>
+          </div>
+
+          {/* Faculty Logo - Hidden on mobile */}
+          <div className="hidden md:block w-32 lg:w-40">
+            <Image
+              src="/Faculty-Logo.png"
+              alt="شعار الكلية"
+              width={160}
+              height={80}
+              className="w-full h-auto object-contain"
+              priority
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -291,13 +386,15 @@ export default function StudentRegistrationPage() {
                     name="nationalId"
                     value={formData.nationalId}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 bg-gray-100 cursor-not-allowed rounded-md focus:outline-none"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none ${
+                      !isAdmin ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     placeholder="أدخل الرقم القومي"
                     minLength={10}
                     maxLength={20}
                     inputMode="numeric"
-                    required
-                    readOnly
+                    required={true}
+                    readOnly={!isAdmin}
                   />
                 </div>
 
@@ -374,7 +471,7 @@ export default function StudentRegistrationPage() {
                     name="nationality"
                     value={formData.nationality}
                     onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                   >
                     <option value="">اختر الجنسية</option>
                     {nationalities.map((n: any) => (
@@ -399,7 +496,7 @@ export default function StudentRegistrationPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                       required
                       min="1950-01-01"
-                      max={new Date().toISOString().split('T')[0]}
+                      max={new Date().toISOString().split("T")[0]}
                     />
                     {/* <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -534,14 +631,12 @@ export default function StudentRegistrationPage() {
                   {" "}
                   <span className="bg-teal-100 text-teal-800 mt-4 mb-6 px-4 py-1 rounded-full text-sm">
                     {" "}
-                    البيانات الأكاديمية الخاصة بشهادة البكالوريوس {" "}
+                    البيانات الأكاديمية الخاصة بشهادة البكالوريوس{" "}
                   </span>{" "}
                 </h3>{" "}
               </div>{" "}
               <div className="mt-4 space-y-6">
-       
-
-               {/* Grade */}
+                {/* Grade */}
                 <div className="w-full">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     التقدير التراكمي
@@ -550,7 +645,7 @@ export default function StudentRegistrationPage() {
                     name="grade"
                     value={formData.grade}
                     onChange={(e) => handleChange(e)}
-                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                   >
                     <option value="">اختر التقدير</option>
                     {grades.map((g: any) => (
@@ -569,7 +664,7 @@ export default function StudentRegistrationPage() {
                     name="universityId"
                     value={formData.universityId}
                     onChange={(e) => handleChange(e)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                   >
                     <option value="">اختر الجامعة</option>
                     {universities.map((u: any) => (
@@ -588,7 +683,7 @@ export default function StudentRegistrationPage() {
                     name="collegeId"
                     value={formData.collegeId}
                     onChange={(e) => handleChange(e)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                   >
                     <option value="">اختر الكلية</option>
                     {colleges.map((c: any) => (
@@ -625,7 +720,7 @@ export default function StudentRegistrationPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, majorId: e.target.value })
                     }
-                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                   >
                     <option value="">اختر التخصص</option>
                     {majors.map((major) => (
@@ -645,108 +740,116 @@ export default function StudentRegistrationPage() {
                     <table className="w-full border text-sm text-center border-gray-300 min-w-[600px]">
                       <thead className="bg-gray-100">
                         <tr>
-                          <th className="border px-2 py-1 min-w-[120px]">المؤهل</th>
-                          <th className="border px-2 py-1 min-w-[150px]">جهة الحصول عليه</th>
-                          <th className="border px-2 py-1 min-w-[120px]">التقدير العام</th>
-                          <th className="border px-2 py-1 min-w-[120px]">تاريخ التخرج</th>
+                          <th className="border px-2 py-1 min-w-[120px]">
+                            المؤهل
+                          </th>
+                          <th className="border px-2 py-1 min-w-[150px]">
+                            جهة الحصول عليه
+                          </th>
+                          <th className="border px-2 py-1 min-w-[120px]">
+                            التقدير العام
+                          </th>
+                          <th className="border px-2 py-1 min-w-[120px]">
+                            تاريخ التخرج
+                          </th>
                           <th className="border px-2 py-1 min-w-[60px]">حذف</th>
                         </tr>
                       </thead>
-                    <tbody>
-                      {formData.qualifications.map((q, index) => (
-                        <tr key={index}>
-                          {/* المؤهل من الـ API */}
-                          <td className="border p-1">
-                            <select
-                              value={q.qualification}
-                              onChange={(e) =>
-                                handleQualificationChange(
-                                  index,
-                                  "qualification",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
-                            >
-                              <option value="">اختر المؤهل</option>
-                              {qualifications.map((qual) => (
-                                <option key={qual.id} value={qual.id}>
-                                  {qual.value}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
+                      <tbody>
+                        {formData.qualifications.map((q, index) => (
+                          <tr key={index}>
+                            {/* المؤهل من الـ API */}
+                            <td className="border p-1">
+                              <select
+                                value={q.qualification}
+                                onChange={(e) =>
+                                  handleQualificationChange(
+                                    index,
+                                    "qualification",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                              >
+                                <option value="">اختر المؤهل</option>
+                                {qualifications.map((qual) => (
+                                  <option key={qual.id} value={qual.id}>
+                                    {qual.value}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
 
-                          {/* جهة الحصول عليه */}
-                          <td className="border p-1">
-                            <input
-                              type="text"
-                              value={q.institution}
-                              onChange={(e) =>
-                                handleQualificationChange(
-                                  index,
-                                  "institution",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
-                              placeholder="اسم الجامعة / المعهد"
-                            />
-                          </td>
+                            {/* جهة الحصول عليه */}
+                            <td className="border p-1">
+                              <input
+                                type="text"
+                                value={q.institution}
+                                onChange={(e) =>
+                                  handleQualificationChange(
+                                    index,
+                                    "institution",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                                placeholder="اسم الجامعة / المعهد"
+                              />
+                            </td>
 
-                          {/* التقدير العام */}
-                          <td className="border p-1">
-                           <select
-                            value={q.grade}
-                            onChange={(e) =>
-                              handleQualificationChange(
-                                index,
-                                "grade",
-                                e.target.value
-                              )
-                            }
-                            className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
-                            >
-                              <option value="">اختر التقدير العام</option>
-                              {grades.map((grade) => (
-                                <option key={grade.id} value={grade.id}>
-                                  {grade.value}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
+                            {/* التقدير العام */}
+                            <td className="border p-1">
+                              <select
+                                value={q.grade}
+                                onChange={(e) =>
+                                  handleQualificationChange(
+                                    index,
+                                    "grade",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                              >
+                                <option value="">اختر التقدير العام</option>
+                                {grades.map((grade) => (
+                                  <option key={grade.id} value={grade.id}>
+                                    {grade.value}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
 
-                          {/* تاريخ التخرج */}
-                          <td className="border p-1">
-                            <input
-                              type="date"
-                              value={q.dateObtained}
-                              onChange={(e) =>
-                                handleQualificationChange(
-                                  index,
-                                  "dateObtained",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
-                              min="1950-01-01"
-                              max={new Date().toISOString().split('T')[0]}
-                            />
-                          </td>
+                            {/* تاريخ التخرج */}
+                            <td className="border p-1">
+                              <input
+                                type="date"
+                                value={q.dateObtained}
+                                onChange={(e) =>
+                                  handleQualificationChange(
+                                    index,
+                                    "dateObtained",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                                min="1950-01-01"
+                                max={new Date().toISOString().split("T")[0]}
+                              />
+                            </td>
 
-                          {/* حذف */}
-                          <td className="border p-1">
-                            <button
-                              type="button"
-                              onClick={() => removeQualificationRow(index)}
-                              className="text-red-500 cursor-pointer hover:text-red-700"
-                            >
-                              ❌
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                            {/* حذف */}
+                            <td className="border p-1">
+                              <button
+                                type="button"
+                                onClick={() => removeQualificationRow(index)}
+                                className="text-red-500 cursor-pointer hover:text-red-700"
+                              >
+                                ❌
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   </div>
 
@@ -758,7 +861,7 @@ export default function StudentRegistrationPage() {
                     ➕ إضافة مؤهل جديد
                   </button>
                 </div>
-                
+
                 {/* Notes */}
                 <div className="w-full">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -789,7 +892,16 @@ export default function StudentRegistrationPage() {
                 disabled={loading}
                 className="px-8 py-3 cursor-pointer bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium disabled:opacity-60"
               >
-                {loading ? "جاري حفظ البيانات..." : " حفظ البيانات وانتقال للصفحة التالية " }
+                {loading
+                  ? "جاري حفظ البيانات..."
+                  : " حفظ البيانات وانتقال للصفحة التالية "}
+              </button>
+
+              <button
+                className="px-4 py-1 cursor-pointer bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium disabled:opacity-60"
+                onClick={handleGoBack}
+              >
+                العوده
               </button>
             </div>
           </form>

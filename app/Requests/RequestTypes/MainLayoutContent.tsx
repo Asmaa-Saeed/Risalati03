@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FileText,
   ClipboardList,
@@ -11,14 +11,13 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
+import DegreeMsarFilter from "@/app/Component/FilterBar";
 
 import AdmissionRequestsComponent from "../AdmissionRequestsComponent";
 import RegistrationFormComponent from "../RegistrationFormComponent";
 import StudentsComponent from "../StudentsComponent";
 
 import SignOutButton from "@/app/Component/SignOutButton";
-import DegreeMsarFilter from "@/app/Component/FilterBar";
-
 interface Filters {
   degreeId: number | null;
   msarId: number | null;
@@ -30,53 +29,81 @@ export default function MainLayoutContent() {
   const deptParam = params.get("departmentId");
   const departmentId = deptParam ? Number(deptParam) : undefined;
 
+  const commonProps = React.useMemo(
+    () => ({
+      filters: {
+        degreeId: params.get("degreeId")
+          ? Number(params.get("degreeId"))
+          : null,
+        msarId: params.get("msarId") ? Number(params.get("msarId")) : null,
+      },
+    }),
+    [params]
+  );
+
   const [activePage, setActivePage] = useState<
     "requests" | "forms" | "students" | "attendance" | "followup" | "exams"
   >("requests");
 
-  const [selectedFilters, setSelectedFilters] = useState<Filters>({
-    degreeId: null,
-    msarId: null,
-  });
+  const handleFilterChange = React.useCallback(
+    (filters: Filters) => {
+      const searchParams = new URLSearchParams(window.location.search);
 
-  const handleFilterChange = useCallback((filters: Filters) => {
-    setSelectedFilters((prev) => {
-      if (prev.degreeId === filters.degreeId && prev.msarId === filters.msarId)
-        return prev;
-      return filters;
-    });
-  }, []);
+      if (filters.degreeId) {
+        searchParams.set("degreeId", filters.degreeId.toString());
+      } else {
+        searchParams.delete("degreeId");
+      }
 
-  const SettingPage = () => router.push(`/Settings`);
-  const handleGoBack = () => router.back();
+      if (filters.msarId) {
+        searchParams.set("msarId", filters.msarId.toString());
+      } else {
+        searchParams.delete("msarId");
+      }
 
-  const renderContent = () => {
+      if (departmentId) {
+        searchParams.set("departmentId", departmentId.toString());
+      }
+
+      const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+      router.push(newUrl);
+    },
+    [departmentId, router]
+  );
+
+  const renderContent = React.useCallback(() => {
     switch (activePage) {
       case "requests":
         return <AdmissionRequestsComponent />;
       case "forms":
-        return <RegistrationFormComponent />;
+        return <RegistrationFormComponent {...commonProps} />;
       case "students":
-        return <StudentsComponent />;
+        return <StudentsComponent {...commonProps} />;
       case "attendance":
-        return <div className="p-4">📋 كشف الغياب</div>;
+        return showExtraTabs ? <div className="p-4">📋 كشف الغياب</div> : null;
       case "followup":
-        return <div className="p-4">📖 كشف المتابعة</div>;
+        return showExtraTabs ? (
+          <div className="p-4">📖 كشف المتابعة</div>
+        ) : null;
       case "exams":
-        return <div className="p-4">🎓 لجان الامتحانات</div>;
+        return showExtraTabs ? (
+          <div className="p-4">🎓 لجان الامتحانات</div>
+        ) : null;
       default:
         return <AdmissionRequestsComponent />;
     }
-  };
+  }, [activePage, commonProps]);
 
-  const showExtraTabs = Boolean(selectedFilters.msarId);
+  const showExtraTabs = Boolean(params.get("msarId"));
+
+  const SettingPage = () => router.push(`/Settings`);
+  const handleGoBack = () => router.back();
 
   return (
     <div
       dir="rtl"
       className="min-h-screen bg-custom-beige flex flex-col md:flex-row"
     >
-      {/* ✅ Sidebar */}
       <aside className="w-full md:w-64 bg-custom-teal text-white p-6 flex flex-col justify-between md:min-h-screen">
         <div>
           <div className="text-center mb-8">
@@ -86,6 +113,7 @@ export default function MainLayoutContent() {
           </div>
 
           <nav className="space-y-2">
+            {/* Main tabs */}
             <SidebarButton
               active={activePage === "requests"}
               icon={<FileText className="w-5 h-5" />}
@@ -130,7 +158,6 @@ export default function MainLayoutContent() {
           </nav>
         </div>
 
-        {/* ✅ Bottom buttons */}
         <div className="space-y-3 pt-6 border-t border-white/30">
           <button
             onClick={SettingPage}
@@ -168,13 +195,13 @@ export default function MainLayoutContent() {
         </div>
       </aside>
 
-      {/* ✅ Main Content */}
       <main className="flex-1 p-6 md:p-10 overflow-auto">
         <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 h-full">
           <DegreeMsarFilter
             departmentId={departmentId}
             onFilterChange={handleFilterChange}
           />
+
           {renderContent()}
         </div>
       </main>
@@ -182,7 +209,6 @@ export default function MainLayoutContent() {
   );
 }
 
-/* ✅ Component صغير لإعادة استخدام الزر في الـ Sidebar */
 function SidebarButton({
   active,
   icon,

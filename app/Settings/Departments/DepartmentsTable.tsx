@@ -74,7 +74,7 @@ export default function DepartmentsTable({
         accessorKey: "code",
         header: ({ column }: HeaderContext<Department, unknown>) => (
           <div className="text-right font-semibold text-gray-900">
-            الكود
+            كود القسم
           </div>
         ),
         cell: ({ row }: CellContext<Department, unknown>) => (

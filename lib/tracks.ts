@@ -1,7 +1,11 @@
-// Types and interfaces for tracks management matching backend API
+// lib/tracks.ts
+// =========================
+// TracksService.ts - Fixed version with correct department mapping and debug logging
+
 export interface Track {
   id: number;
   name: string;
+  code: string;
   degreeId: number;
   degree: {
     id: number;
@@ -11,7 +15,7 @@ export interface Track {
     departmentId: number;
     generalDegree: string;
   };
-  // Additional fields for complete CRUD system
+  departmentId?: number;
   departmentName?: string;
   createdAt: string;
   updatedAt: string;
@@ -19,15 +23,16 @@ export interface Track {
 
 export interface CreateTrackData {
   name: string;
+  code: string;
   degreeId: number;
   departmentId: number;
 }
 
-export interface UpdateTrackData extends Partial<CreateTrackData> {
+export interface UpdateTrackData extends Partial<Omit<CreateTrackData, 'id'>> {
   id: number;
+  code?: string;
 }
 
-// API Response structure
 export interface TracksApiResponse {
   succeeded: boolean;
   message: string;
@@ -42,7 +47,6 @@ export interface TrackApiResponse {
   errors?: string[];
 }
 
-// Lookup API response types
 export interface LookupItem {
   id: number;
   value: string;
@@ -55,44 +59,47 @@ export interface LookupApiResponse {
   data: LookupItem[];
 }
 
-// Tracks Service Implementation
-// =======================
-// This service implements the requirements for displaying department names correctly:
-//
-// 1. Fetches tracks from /api/Msar
-// 2. Fetches departments from /api/Lookups/departments
-// 3. Maps department names using track.degree.departmentId
-// 4. Uses department.value (not department.name) from API response
-// 5. Returns "غير محدد" for departmentId = 0 or not found
-// 6. Updates dynamically when tracks are edited
-
-// Mock data service matching API structure
 export class TracksService {
-  // Cache for departments to avoid repeated API calls
   private static departmentsCache: LookupItem[] | null = null;
 
-  // Simulate API delay
   private static delay(ms: number = 500): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // ✅ FIXED VERSION
   static async getTracks(): Promise<TracksApiResponse> {
     await this.delay();
     try {
-      // Use real API instead of mock data
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       const { getTracks } = await import('@/actions/trackActions');
       const result = await getTracks(token || "");
 
       if (result.success && result.data) {
-        // Get departments from API
         const departments = await this.getDepartmentsFromAPI();
 
-        // Map tracks with department names
-        const tracksWithDepartments = result.data.map((track: any) => ({
-          ...track,
-          departmentName: this.getDepartmentNameById(track.degree?.departmentId || 0, departments),
-        }));
+        // 🧩 Debug log: show department data
+        console.log("📊 Departments fetched:", departments);
+
+        const tracksWithDepartments = result.data.map((track: any) => {
+          const departmentId =
+            track.degree?.departmentId ||
+            track.departmentId ||
+            0;
+
+          const department = departments.find((d) => d.id === departmentId);
+
+          const departmentName = department ? department.value : "غير محدد";
+
+          // 🧩 Debug log for each track
+          console.log(
+            `🎯 Track: ${track.name} | departmentId: ${departmentId} | departmentName: ${departmentName}`
+          );
+
+          return {
+            ...track,
+            departmentName,
+          };
+        });
 
         return {
           succeeded: true,
@@ -109,6 +116,7 @@ export class TracksService {
         };
       }
     } catch (error) {
+      console.error("❌ Error in getTracks:", error);
       return {
         succeeded: false,
         message: "حدث خطأ في جلب البيانات",
@@ -118,11 +126,6 @@ export class TracksService {
     }
   }
 
-  /**
-   * Fetches tracks by degree ID using the GetMsaratByDegreeId endpoint
-   * @param degreeId The ID of the degree to get tracks for
-   * @returns Promise with tracks data or error information
-   */
   static async getTracksByDegree(degreeId: number): Promise<{ 
     succeeded: boolean; 
     data: LookupItem[]; 
@@ -173,7 +176,6 @@ export class TracksService {
   static async getTrack(id: number): Promise<TrackApiResponse> {
     await this.delay();
     try {
-      // For now, get all tracks and find the specific one
       const response = await this.getTracks();
       const track = response.data.find(t => t.id === id);
 
@@ -215,7 +217,12 @@ export class TracksService {
       }
 
       const { createTrack } = await import('@/actions/trackActions');
-      const result = await createTrack(trackData, token);
+      const result = await createTrack({
+        name: trackData.name,
+        code: trackData.code,
+        degreeId: trackData.degreeId,
+        departmentId: trackData.departmentId,
+      }, token);
 
       if (result.success && result.data) {
         return {
@@ -224,14 +231,17 @@ export class TracksService {
           message: result.message || "تم إضافة المسار بنجاح",
         };
       } else {
+        const errorMessage = result.message || "حدث خطأ في إضافة المسار";
+        const errors = result.errors || [errorMessage];
         return {
           succeeded: false,
           data: null,
-          message: result.message || "حدث خطأ في إضافة المسار",
-          errors: ["Validation failed"],
+          message: errorMessage,
+          errors: errors,
         };
       }
     } catch (error) {
+      console.error("❌ Error creating track:", error);
       return {
         succeeded: false,
         data: null,
@@ -276,6 +286,7 @@ export class TracksService {
         };
       }
     } catch (error) {
+      console.error("❌ Error updating track:", error);
       return {
         succeeded: false,
         data: null,
@@ -313,6 +324,7 @@ export class TracksService {
         };
       }
     } catch (error) {
+      console.error("❌ Error deleting track:", error);
       return {
         succeeded: false,
         message: "حدث خطأ في حذف المسار",
@@ -321,7 +333,6 @@ export class TracksService {
     }
   }
 
-  // Get available degrees for dropdown
   static async getDegrees(): Promise<LookupItem[]> {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     const { getDegrees } = await import('@/actions/trackActions');
@@ -337,84 +348,30 @@ export class TracksService {
     }
   }
 
-  // Get departments from API
   private static async getDepartmentsFromAPI(): Promise<LookupItem[]> {
+    if (this.departmentsCache) return this.departmentsCache;
+
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) {
+        console.warn("⚠️ No authentication token available");
+        return [];
+      }
+
       const { getDepartments } = await import('@/actions/trackActions');
-      const result = await getDepartments(token || "");
+      const result = await getDepartments(token);
 
       if (result.success && result.data) {
-        return result.data;
+        this.departmentsCache = result.data.map((dept: any) => ({
+          id: dept.id,
+          value: dept.value || dept.name || `Department ${dept.id}`,
+        }));
+        return this.departmentsCache;
       }
+      return [];
     } catch (error) {
-      console.error("Error fetching departments:", error);
+      console.error("❌ Error fetching departments:", error);
+      return [];
     }
-
-    // Return empty array if API fails - department names will show "غير محدد"
-    return [];
-  }
-
-  // Get department name by ID
-  private static getDepartmentNameById(departmentId: number, departments: LookupItem[]): string {
-    // Handle case where departmentId is 0 (not set)
-    if (departmentId === 0) {
-      return "غير محدد";
-    }
-
-    // Search for the department in the departments array
-    const department = departments.find(dept => dept.id === departmentId);
-    if (department) {
-      return department.value;
-    }
-
-    // Return fallback if not found
-    return "غير محدد";
-  }
-
-  // Helper method to get department name (fallback)
-  private static getDepartmentName(departmentId: number): string {
-    // Handle case where departmentId is 0 (not set)
-    if (departmentId === 0) {
-      return "غير محدد";
-    }
-
-    const departments: { [key: number]: string } = {
-      1: "قسم المحاسبة",
-      2: "قسم إدارة الأعمال",
-      3: "قسم الاقتصاد",
-      4: "قسم التسويق",
-      5: "قسم المالية والاستثمار",
-      6: "قسم إدارة الموارد البشرية",
-      7: "قسم نظم المعلومات الإدارية",
-      8: "قسم إدارة الجودة",
-    };
-    return departments[departmentId] || `قسم ${departmentId}`;
   }
 }
-
-/*
-💡 TRACKS API INTEGRATION:
-
-✅ CREATE TRACK (POST /api/Msar):
-- Sends: { name, degreeId, degree: { id, name, description, standardDurationYears, departmentId, generalDegree } }
-- Receives: Track object with updated department names
-- Success: Shows inline message and refreshes table
-
-✅ UPDATE TRACK (PUT /api/Msar/{id}):
-- Sends: Same format as create with track ID in URL and body
-- Updates: Track name, degree, and department associations
-- Success: Reloads tracks to show updated department names
-
-✅ DELETE TRACK (DELETE /api/Msar/{id}):
-- Sends: DELETE request to /api/Msar/{id} with Authorization header
-- Receives: Success confirmation with message
-- Success: Shows success message, refreshes table, resets pagination
-- Complete removal from database with proper cleanup
-
-✅ DYNAMIC DEPARTMENT UPDATES:
-- Edit track → Updates departmentId → API updates degree object → Frontend reloads → Shows new department name
-- All operations include comprehensive error handling and user feedback
-
-The implementation now fully matches your backend API specification! 🎉
-*/

@@ -157,14 +157,24 @@ export const getMsaratByDegreeId = async (
 // 🟢 Create Track - Matches API specification
 // POST /api/Msar
 // Body: { name, degreeId, degree: { id, name, description, standardDurationYears, departmentId, generalDegree } }
+interface ApiErrorResponse {
+  type?: string;
+  title?: string;
+  status?: number;
+  errors?: Record<string, string[]>;
+  traceId?: string;
+  message?: string;
+}
+
 export const createTrack = async (
   trackData: {
     name: string;
+    code: string;
     degreeId: number;
     departmentId: number;
   },
   token: string
-): Promise<{ success: boolean; data?: any; message?: string }> => {
+): Promise<{ success: boolean; data?: any; message?: string; errors?: string[] }> => {
   try {
     if (!API_URL) {
       throw new Error("❌ Environment variable NEXT_PUBLIC_API_URL is not set");
@@ -186,17 +196,20 @@ export const createTrack = async (
       // ignore, will send empty and let backend validate
     }
 
-    // Format data according to API specification, including DepartmentName required by backend
+    // Format data according to API specification with nested degree object
     const bodyData = {
+      id: 0, // Will be set by the server
       name: trackData.name,
+      code: trackData.code, // Ensure code is included with correct case
       degreeId: trackData.degreeId,
-      DepartmentName: departmentName,
+      departmentName: departmentName,
       degree: {
         id: trackData.degreeId,
-        name: "",
+        name: "", // These fields might be ignored by the backend
         description: "",
         standardDurationYears: 0,
         departmentId: trackData.departmentId,
+        departmentName: departmentName,
         generalDegree: ""
       }
     };
@@ -218,9 +231,29 @@ export const createTrack = async (
     console.log("🔹 Create Track Response body:", text);
 
     if (!response.ok) {
-      throw new Error(
-        `❌ Failed to create track: ${response.status} ${response.statusText} | ${text}`
-      );
+      let errorMessage = 'فشل في إنشاء المسار';
+      let errors: string[] = [];
+      
+      try {
+        const errorData: ApiErrorResponse = JSON.parse(text);
+        
+        // Extract validation errors if they exist
+        if (errorData.errors) {
+          errors = Object.values(errorData.errors).flat();
+          errorMessage = errors.join('\n');
+        } else if (errorData.title) {
+          errorMessage = errorData.title;
+        }
+      } catch (e) {
+        // If we can't parse the error response, use the status text
+        errorMessage = `خطأ في الخادم: ${response.status} ${response.statusText}`;
+      }
+      
+      return { 
+        success: false, 
+        message: errorMessage,
+        errors: errors.length > 0 ? errors : [errorMessage]
+      };
     }
 
     let data: any;
@@ -248,6 +281,7 @@ export const updateTrack = async (
   id: number,
   trackData: {
     name: string;
+    code?: string;
     degreeId: number;
     departmentId: number;
   },
@@ -274,18 +308,20 @@ export const updateTrack = async (
       // ignore, backend will validate if missing
     }
 
-    // Format data according to API specification
+    // Format data according to API specification with nested degree object
     const bodyData = {
       id: id,
       name: trackData.name,
+      code: trackData.code || "", // Include code field
       degreeId: trackData.degreeId,
-      DepartmentName: departmentName,
+      departmentName: departmentName,
       degree: {
-        id: trackData.degreeId, // Use degreeId as degree.id
-        name: "", // Will be filled by backend or we need to fetch degree details
+        id: trackData.degreeId,
+        name: "", // These fields might be ignored by the backend
         description: "",
         standardDurationYears: 0,
         departmentId: trackData.departmentId,
+        departmentName: departmentName,
         generalDegree: ""
       }
     };
@@ -382,7 +418,38 @@ export const deleteTrack = async (
     return { success: false, message: data?.message || "فشل في حذف المسار" };
   } catch (error) {
     console.error("❌ Error deleting track:", error);
-    return { success: false, message: (error as Error).message };
+    
+    // Handle CORS errors specifically
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      return { 
+        success: false, 
+        message: "لا يمكن حذف هذا المسار لأنه مرتبط ببيانات أخرى في النظام. يرجى التأكد من عدم وجود طلاب أو مواد دراسية مرتبطة بهذا المسار أولاً."
+      };
+    }
+    
+    // Handle other types of errors
+    const errorMessage = (error as Error).message;
+    
+    // Check for common error patterns and provide user-friendly messages
+    if (errorMessage.includes('404')) {
+      return { 
+        success: false, 
+        message: "لم يتم العثور على المسار المحدد. قد يكون قد تم حذفه مسبقاً." 
+      };
+    }
+    
+    if (errorMessage.includes('403') || errorMessage.includes('401')) {
+      return { 
+        success: false, 
+        message: "ليس لديك صلاحية حذف هذا المسار. يرجى مراجعة المسؤول." 
+      };
+    }
+    
+    // Default error message
+    return { 
+      success: false, 
+      message: "حدث خطأ أثناء محاولة حذف المسار. يرجى المحاولة مرة أخرى لاحقاً." 
+    };
   }
 };
 

@@ -44,16 +44,40 @@ export default function DeleteDegreeConfirmModal({
 
       if (result.success) {
         // Show success toast matching the add/edit style
-        toast.success(result.message || "تم حذف الدرجة العلمية بنجاح ");
+        toast.success(result.message || "تم حذف الدرجة العلمية بنجاح");
         onSuccess?.();
         onClose();
       } else {
-        toast.error(result.message || "حدث خطأ أثناء حذف الدرجة العلمية");
+        // Check for specific error messages from the API
+        const errorMessage = result.message || "حدث خطأ أثناء حذف الدرجة العلمية";
+        
+        // Check for 500 error or other server-side errors
+        if (errorMessage.includes('500') || 
+            errorMessage.includes('فشل') || 
+            errorMessage.includes('server') ||
+            errorMessage.includes('Internal Server Error')) {
+          toast.error("لا يمكن حذف هذه الدرجة العلمية لأنها مرتبطة ببيانات أخرى في النظام");
+        } else {
+          toast.error(errorMessage);
+        }
       }
     } catch (error) {
       console.error("Error in delete confirmation:", error);
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
-      toast.error(errorMessage);
+      
+      // Handle fetch errors (like CORS or network issues)
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.error("تعذر الاتصال بالخادم. يرجى التحقق من اتصال الشبكة والمحاولة مرة أخرى.");
+      } 
+      // Handle 500 errors
+      else if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
+        toast.error("لا يمكن حذف هذه الدرجة العلمية لأنها مرتبطة ببيانات أخرى في النظام");
+      }
+      // Handle other errors
+      else {
+        toast.error(errorMessage);
+      }
+      
       onClose();
     }
   };

@@ -106,7 +106,7 @@ export default function DeleteTrackConfirmModal({
             <div className="text-sm">
               <div className="font-medium text-gray-900 mb-1">معلومات المسار:</div>
               <div className="text-gray-700">{track?.name}</div>
-              <div className="text-gray-500 text-xs mt-1">الرقم التعريفي: {track?.id}</div>
+              {/* <div className="text-gray-500 text-xs mt-1">الرقم التعريفي: {track?.id}</div> */}
               <div className="text-gray-500 text-xs mt-1">الدرجة العلمية: {track?.degree.name}</div>
               <div className="text-gray-500 text-xs mt-1">القسم: {track?.departmentName}</div>
             </div>

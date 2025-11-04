@@ -12,7 +12,15 @@ import {
   HeaderContext,
   CellContext,
 } from "@tanstack/react-table";
-import { Search, Plus, Edit, Trash2, Eye, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import { Track } from "@/lib/tracks";
 
 interface TracksTableProps {
@@ -37,6 +45,7 @@ export default function TracksTable({
 
   const columns = useMemo(
     () => [
+      // 🔹 رقم الصف
       {
         id: "id",
         header: "#",
@@ -48,6 +57,7 @@ export default function TracksTable({
           </div>
         ),
       },
+      // 🔹 اسم المسار
       {
         accessorKey: "name",
         header: ({ column }: HeaderContext<Track, unknown>) => (
@@ -65,57 +75,90 @@ export default function TracksTable({
         ),
         cell: ({ row }: CellContext<Track, unknown>) => (
           <div className="text-right">
-            <span className="font-medium text-gray-900">{row.original.name}</span>
+            <span className="font-medium text-gray-900">
+              {row.original.name}
+            </span>
           </div>
         ),
       },
-      // {
-      //   accessorFn: (row: Track) => row.degree.name,
-      //   id: "degreeName",
-      //   header: ({ column }: HeaderContext<Track, unknown>) => (
-      //     <button
-      //       className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
-      //       onClick={() => column.toggleSorting()}
-      //     >
-      //       الدرجة العلمية
-      //       {column.getIsSorted() === "asc" ? (
-      //         <ChevronUp size={16} />
-      //       ) : column.getIsSorted() === "desc" ? (
-      //         <ChevronDown size={16} />
-      //       ) : null}
-      //     </button>
-      //   ),
-      //   cell: ({ row }: CellContext<Track, unknown>) => (
-      //     <div className="text-right">
-      //       <span className="font-medium text-gray-900">{row.original.degree.name}</span>
-      //     </div>
-      //   ),
-      // },
-      // {
-      //   accessorFn: (row: Track) => row.departmentName,
-      //   id: "departmentName",
-      //   header: ({ column }: HeaderContext<Track, unknown>) => (
-      //     <button
-      //       className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
-      //       onClick={() => column.toggleSorting()}
-      //     >
-      //       القسم
-      //       {column.getIsSorted() === "asc" ? (
-      //         <ChevronUp size={16} />
-      //       ) : column.getIsSorted() === "desc" ? (
-      //         <ChevronDown size={16} />
-      //       ) : null}
-      //     </button>
-      //   ),
-      //   cell: ({ row }: CellContext<Track, unknown>) => (
-      //     <div className="text-right">
-      //       <span className="font-medium text-gray-900">{row.original.departmentName}</span>
-      //     </div>
-      //   ),
-      // },
+      // 🔹 كود المسار (تم إصلاحه هنا)
+      {
+        accessorKey: "code",
+        header: ({ column }: HeaderContext<Track, unknown>) => (
+          <button
+            className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+            onClick={() => column.toggleSorting()}
+          >
+            كود المسار
+            {column.getIsSorted() === "asc" ? (
+              <ChevronUp size={16} />
+            ) : column.getIsSorted() === "desc" ? (
+              <ChevronDown size={16} />
+            ) : null}
+          </button>
+        ),
+        cell: ({ row }: CellContext<Track, unknown>) => (
+          <div className="text-right">
+            <span className="font-mono text-gray-800 bg-gray-50 px-2 py-1 rounded-md border border-gray-200">
+              {row.original.code || "—"}
+            </span>
+          </div>
+        ),
+      },
+      // 🔹 الدرجة العلمية
+      {
+        accessorFn: (row: Track) => row.degree?.name,
+        id: "degreeName",
+        header: ({ column }: HeaderContext<Track, unknown>) => (
+          <button
+            className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+            onClick={() => column.toggleSorting()}
+          >
+            الدرجة العلمية
+            {column.getIsSorted() === "asc" ? (
+              <ChevronUp size={16} />
+            ) : column.getIsSorted() === "desc" ? (
+              <ChevronDown size={16} />
+            ) : null}
+          </button>
+        ),
+        cell: ({ row }: CellContext<Track, unknown>) => (
+          <div className="text-right">
+            <span className="font-medium text-gray-900">
+              {row.original.degree?.name || "—"}
+            </span>
+          </div>
+        ),
+      },
+      // 🔹 القسم
+      {
+        accessorFn: (row: Track) => row.departmentName,
+        id: "departmentName",
+        header: ({ column }: HeaderContext<Track, unknown>) => (
+          <button
+            className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+            onClick={() => column.toggleSorting()}
+          >
+            القسم
+            {column.getIsSorted() === "asc" ? (
+              <ChevronUp size={16} />
+            ) : column.getIsSorted() === "desc" ? (
+              <ChevronDown size={16} />
+            ) : null}
+          </button>
+        ),
+        cell: ({ row }: CellContext<Track, unknown>) => (
+          <div className="text-right">
+            <span className="font-medium text-gray-900">
+              {row.original.departmentName || "—"}
+            </span>
+          </div>
+        ),
+      },
+      // 🔹 الإجراءات
       {
         id: "actions",
-        header: ({ column }: HeaderContext<Track, unknown>) => (
+        header: () => (
           <div className="text-center">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
               الإجراءات
@@ -173,19 +216,17 @@ export default function TracksTable({
 
   return (
     <div className="space-y-4">
-      {/* Header and Search */}
+      {/* 🔍 Header + Search */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="البحث في المسارات..."
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(String(event.target.value))}
-              className="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 bg-gray-50 hover:bg-white"
-            />
-          </div>
+        <div className="flex-1 relative">
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="البحث في المسارات..."
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(String(e.target.value))}
+            className="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+          />
         </div>
         <button
           onClick={onAdd}
@@ -196,7 +237,7 @@ export default function TracksTable({
         </button>
       </div>
 
-      {/* Table */}
+      {/* 🧾 Table */}
       <div className="bg-white shadow-lg border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -239,14 +280,16 @@ export default function TracksTable({
           </table>
         </div>
 
-        {/* Empty State */}
+        {/* 🚫 Empty State */}
         {tracks.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <Search size={24} />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد مسارات</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                لا توجد مسارات
+              </h3>
               <p className="text-gray-500 mb-6">لم يتم العثور على أي مسارات</p>
               <button
                 onClick={onAdd}
@@ -260,7 +303,7 @@ export default function TracksTable({
         )}
       </div>
 
-      {/* Results Info */}
+      {/* 🔢 Results Count */}
       <div className="text-sm text-gray-500 text-right">
         عرض {table.getFilteredRowModel().rows.length} من {tracks.length} مسار
       </div>

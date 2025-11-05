@@ -62,7 +62,18 @@ export default function AddTrackModal({ isOpen, onClose, onSubmit, loading = fal
       const token = localStorage.getItem("token");
       const { getDepartments } = await import("@/actions/trackActions");
       const result = await getDepartments(token || "");
-      if (result.success && result.data) setDepartments(result.data);
+      
+      if (result.success && result.data) {
+        // Map the department data to LookupItem format
+        const validDepartments: LookupItem[] = result.data
+          .filter((dept: any) => dept.id && dept.value) // Ensure required fields exist
+          .map((dept: any) => ({
+            id: Number(dept.id),
+            value: String(dept.value)
+          }));
+        
+        setDepartments(validDepartments);
+      }
     } catch (error) {
       console.error("❌ Error loading departments:", error);
     } finally {
@@ -103,16 +114,36 @@ export default function AddTrackModal({ isOpen, onClose, onSubmit, loading = fal
 
   const handleFormSubmit = async (data: TrackFormData) => {
     try {
+      // Ensure departmentId is a valid number
+      const departmentId = Number(data.departmentId);
+      if (isNaN(departmentId) || departmentId <= 0) {
+        throw new Error('يجب اختيار قسم صحيح');
+      }
+      
+      // Find the selected department to ensure it exists
+      const selectedDept = departments.find(d => d.id === departmentId);
+      if (!selectedDept) {
+        throw new Error('القسم المحدد غير صالح');
+      }
+      
+      console.log('Submitting with department ID:', departmentId, 'Name:', selectedDept.value);
+      
       await onSubmit({
-        name: data.name,
-        code: data.code,
-        degreeId: data.degreeId,
-        departmentId: data.departmentId,
+        name: data.name.trim(),
+        code: data.code.trim(),
+        degreeId: Number(data.degreeId),
+        departmentId: departmentId,
       });
+      
+      // Only reset and close on successful submission
       reset({ name: "", code: "", degreeId: 0, departmentId: 0 });
       onClose();
     } catch (error) {
+      // Don't close the modal on error
+      // The error will be shown in the toast by the parent component
       console.error("Error in form submission:", error);
+      // Re-throw the error to be handled by react-hook-form
+      throw error;
     }
   };
 
@@ -152,7 +183,7 @@ export default function AddTrackModal({ isOpen, onClose, onSubmit, loading = fal
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">اسم المسار <span className="text-red-500">*</span></label>
             <input {...register("name")} type="text" placeholder="أدخل اسم المسار"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 ${errors.name ? "border-red-500" : "border-gray-300"}`} />
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${errors.name ? "border-red-500" : "border-gray-300"}`} />
             {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
           </div>
 
@@ -160,7 +191,7 @@ export default function AddTrackModal({ isOpen, onClose, onSubmit, loading = fal
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">كود المسار <span className="text-red-500">*</span></label>
             <input {...register("code")} type="text" placeholder="أدخل كود المسار"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 ${errors.code ? "border-red-500" : "border-gray-300"}`} />
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${errors.code ? "border-red-500" : "border-gray-300"}`} />
             {errors.code && <p className="text-sm text-red-600 mt-1">{errors.code.message}</p>}
           </div>
 
@@ -177,7 +208,7 @@ export default function AddTrackModal({ isOpen, onClose, onSubmit, loading = fal
                   handleDepartmentChange(id);
                 }}
                 disabled={loadingDepartments}
-                className={`w-full rounded-md border px-3 py-2 transition
+                className={`w-full rounded-md border px-3 py-2 transition focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent
                   ${errors.departmentId ? "border-red-500" : "border-gray-300"}
                   ${loadingDepartments ? "bg-gray-100 cursor-not-allowed" : "bg-white"}
                 `}
@@ -196,7 +227,7 @@ export default function AddTrackModal({ isOpen, onClose, onSubmit, loading = fal
               <select
                 {...register("degreeId", { valueAsNumber: true })}
                 disabled={!watchDepartmentId || loadingDegrees}
-                className={`w-full rounded-md border px-3 py-2 transition
+                className={`w-full rounded-md border px-3 py-2 transition focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent
                   ${errors.degreeId ? "border-red-500" : "border-gray-300"}
                   ${!watchDepartmentId ? "bg-gray-100 cursor-not-allowed" : "bg-white"}
                 `}

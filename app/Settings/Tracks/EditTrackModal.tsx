@@ -197,7 +197,7 @@ export default function EditTrackModal({
               {...register("name")}
               type="text"
               placeholder="أدخل اسم المسار"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 ${
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 errors.name ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -215,7 +215,7 @@ export default function EditTrackModal({
               {...register("code")}
               type="text"
               placeholder="أدخل كود المسار"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 ${
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 errors.code ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -263,7 +263,7 @@ export default function EditTrackModal({
             <select
               {...register("degreeId", { valueAsNumber: true })}
               disabled={!watchDepartmentId || loadingDegrees}
-              className={`w-full rounded-md border px-3 py-2 transition
+              className={`w-full rounded-md border px-3 py-2 transition focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent
                 ${errors.degreeId ? "border-red-500" : "border-gray-300"}
                 ${!watchDepartmentId ? "bg-gray-100 cursor-not-allowed" : "bg-white"}
               `}

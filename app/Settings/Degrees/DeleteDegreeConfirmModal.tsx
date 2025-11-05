@@ -43,39 +43,171 @@ export default function DeleteDegreeConfirmModal({
       const result = await onConfirm(degree.id);
 
       if (result.success) {
-        // Show success toast matching the add/edit style
-        toast.success(result.message || "تم حذف الدرجة العلمية بنجاح");
+        // Show success toast with consistent styling
+        toast.success(result.message || "تم حذف الدرجة العلمية بنجاح", {
+          duration: 3000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #10b981',
+            padding: '16px',
+            color: '#065f46',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl',
+            maxWidth: '500px',
+            margin: '0 auto'
+          },
+          icon: '✅',
+        });
         onSuccess?.();
         onClose();
       } else {
-        // Check for specific error messages from the API
+        // Handle API error response (non-200 status)
         const errorMessage = result.message || "حدث خطأ أثناء حذف الدرجة العلمية";
         
-        // Check for 500 error or other server-side errors
         if (errorMessage.includes('500') || 
-            errorMessage.includes('فشل') || 
-            errorMessage.includes('server') ||
-            errorMessage.includes('Internal Server Error')) {
-          toast.error("لا يمكن حذف هذه الدرجة العلمية لأنها مرتبطة ببيانات أخرى في النظام");
+            errorMessage.includes('related') || 
+            errorMessage.includes('مرتبط') ||
+            errorMessage.includes('cannot be deleted')) {
+          toast.error('لا يمكن حذف هذه الدرجة العلمية لأنها مرتبطة ببيانات أخرى في النظام. يرجى التأكد من عدم وجود طلاب أو مواد دراسية مرتبطة بهذه الدرجة أولاً.', {
+            duration: 5000,
+            position: 'top-center',
+            style: {
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              padding: '16px',
+              color: '#991b1b',
+              fontFamily: 'Tajawal, sans-serif',
+              textAlign: 'right',
+              direction: 'rtl',
+              maxWidth: '500px',
+              margin: '0 auto'
+            },
+            icon: '⚠️',
+          });
         } else {
-          toast.error(errorMessage);
+          toast.error(errorMessage, {
+            duration: 4000,
+            position: 'top-center',
+            style: {
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              padding: '16px',
+              color: '#991b1b',
+              fontFamily: 'Tajawal, sans-serif',
+              textAlign: 'right',
+              direction: 'rtl',
+              maxWidth: '500px',
+              margin: '0 auto'
+            },
+            icon: '❌',
+          });
         }
       }
     } catch (error) {
       console.error("Error in delete confirmation:", error);
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
       
-      // Handle fetch errors (like CORS or network issues)
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        toast.error("تعذر الاتصال بالخادم. يرجى التحقق من اتصال الشبكة والمحاولة مرة أخرى.");
+      // Handle network/CORS errors
+      if (errorMessage.includes('Failed to fetch') || 
+           errorMessage.includes('NetworkError') || 
+           errorMessage.includes('CORS')) {
+        toast.error('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الشبكة والمحاولة مرة أخرى.', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl',
+            maxWidth: '500px',
+            margin: '0 auto'
+          },
+          icon: '🔌',
+        });
       } 
+      // Handle 404 - Not Found
+      else if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        toast.error('لم يتم العثور على الدرجة العلمية المحددة. قد تكون قد حُذفت مسبقاً.', {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl',
+            maxWidth: '500px',
+            margin: '0 auto'
+          },
+          icon: '🔍',
+        });
+      }
+      // Handle 403/401 - Unauthorized/Forbidden
+      else if (errorMessage.includes('403') || 
+               errorMessage.includes('401') || 
+               errorMessage.includes('Unauthorized') || 
+               errorMessage.includes('Forbidden')) {
+        toast.error('ليس لديك صلاحية حذف هذه الدرجة العلمية. يرجى مراجعة المسؤول.', {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl',
+            maxWidth: '500px',
+            margin: '0 auto'
+          },
+          icon: '🚫',
+        });
+      }
       // Handle 500 errors
       else if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
-        toast.error("لا يمكن حذف هذه الدرجة العلمية لأنها مرتبطة ببيانات أخرى في النظام");
+        toast.error('لا يمكن حذف هذه الدرجة العلمية لأنها مرتبطة ببيانات أخرى في النظام. يرجى التأكد من عدم وجود طلاب أو مواد دراسية مرتبطة بهذه الدرجة أولاً.', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl',
+            maxWidth: '500px',
+            margin: '0 auto'
+          },
+          icon: '⚠️',
+        });
       }
-      // Handle other errors
+      // For other errors, show the error message
       else {
-        toast.error(errorMessage);
+        toast.error(`حدث خطأ: ${errorMessage}`, {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl',
+            maxWidth: '500px',
+            margin: '0 auto'
+          },
+          icon: '❌',
+        });
       }
       
       onClose();
@@ -83,8 +215,21 @@ export default function DeleteDegreeConfirmModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+    <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 transition-all duration-300 ${
+      isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+    }`}>
+      {/* Backdrop */}
+      <div 
+        className={`absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0'
+        }`}
+        onClick={onClose}
+      />
+      
+      {/* Modal Content */}
+      <div className={`bg-white rounded-xl shadow-xl max-w-md w-full relative z-10 transform transition-all duration-300 ${
+        isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+      }`} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">

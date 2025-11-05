@@ -53,7 +53,7 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
     try {
       await onSave(formData);
       toast.dismiss(loadingToast);
-      toast.success('تمت إضافة العام الدراسي بنجاح 🎉');
+      toast.success('تمت إضافة العام الدراسي بنجاح ');
       onClose();
     } catch (error) {
       console.error('Error adding intake:', error);

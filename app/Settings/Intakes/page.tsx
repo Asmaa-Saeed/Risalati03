@@ -67,19 +67,40 @@ const handleAddIntake = async (intakeData: any) => {
 
 // ----------------- Edit -----------------
 const handleEditIntake = async (intakeData: any) => {
+  if (!intakeData.id) {
+    console.error('❌ لا يمكن تحديث العام الدراسي: معرف غير صالح');
+    toast.error('خطأ: معرف العام الدراسي غير صالح');
+    return;
+  }
+
   setEditing(true);
+  console.log('Sending update request with data:', intakeData);
 
   try {
-    const response = await IntakesService.updateIntake(intakeData);
-    if (response.succeeded && response.data) {
-      console.log(response.message || '✅ تم تحديث العام الدراسي بنجاح');
+    const response = await IntakesService.updateIntake({
+      id: intakeData.id,
+      name: intakeData.name,
+      startDate: intakeData.startDate,
+      endDate: intakeData.endDate
+    });
+
+    console.log('Update response:', response);
+    
+    if (response.succeeded) {
+      const message = response.message || '✅ تم تحديث العام الدراسي بنجاح';
+      console.log(message);
+      toast.success('تم تحديث العام الدراسي بنجاح');
+      await loadIntakes(); // Reload the intakes list
       closeModal();
-      setTimeout(() => router.refresh(), 1000);
     } else {
-      console.log(response.message || '❌ حدث خطأ في تحديث العام الدراسي');
+      const errorMessage = response.message || '❌ حدث خطأ في تحديث العام الدراسي';
+      console.error(errorMessage);
+      toast.error(errorMessage);
     }
-  } catch (error) {
+  } catch (error: any) {
+    const errorMessage = error.message || '❌ حدث خطأ غير متوقع أثناء تحديث العام الدراسي';
     console.error('❌ خطأ أثناء تحديث العام الدراسي:', error);
+    toast.error(errorMessage);
   } finally {
     setEditing(false);
   }

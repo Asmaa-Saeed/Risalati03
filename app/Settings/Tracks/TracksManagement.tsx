@@ -48,21 +48,26 @@ export default function TracksManagement() {
     }
   };
 
-  const handleAddTrack = async (trackData: CreateTrackData) => {
+  const handleAddTrack = async (trackData: CreateTrackData): Promise<void> => {
     setSaving(true);
     try {
+      const token = localStorage.getItem("token") || "";
+      
+      // Call the service with the track data and token
       const response = await TracksService.createTrack(trackData);
-      if (response.succeeded && response.data) {
+      
+      if (response.succeeded) {
         await loadTracks();
         closeModal();
-        toast.success("✅ تم إضافة المسار بنجاح");
+        toast.success("تم إضافة المسار بنجاح");
       } else {
-        toast.error(response.message || "❌ فشل في إضافة المسار");
+        const errorMessage = response.message || "فشل في إضافة المسار";
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error("❌ Error adding track:", error);
-      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في إضافة المسار";
-      toast.error(errorMessage);
+      console.error("Error adding track:", error);
+      throw error; // Re-throw to be handled by react-hook-form
     } finally {
       setSaving(false);
     }
@@ -79,12 +84,12 @@ export default function TracksManagement() {
         await loadTracks();
 
         closeModal();
-        toast.success("✅ تم تحديث المسار بنجاح");
+        toast.success("تم تحديث المسار بنجاح");
       } else {
-        toast.error(response.message || "❌ فشل في تحديث المسار");
+        toast.error(response.message || "فشل في تحديث المسار");
       }
     } catch (error) {
-      console.error("❌ Error updating track:", error);
+      console.error(" Error updating track:", error);
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث المسار";
       toast.error(errorMessage);
     } finally {

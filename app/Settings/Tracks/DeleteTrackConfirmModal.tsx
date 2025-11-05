@@ -42,112 +42,16 @@ export default function DeleteTrackConfirmModal({
 
       if (result.success) {
         // Show success toast matching the add/edit style
-        toast.success(result.message || "تم حذف المسار الدراسي بنجاح ", {
-          duration: 3000,
-          position: 'top-center',
-          style: {
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #10b981',
-            padding: '16px',
-            color: '#065f46',
-            fontFamily: 'Tajawal, sans-serif',
-            textAlign: 'right',
-            direction: 'rtl',
-            maxWidth: '500px',
-            margin: '0 auto'
-          },
-          icon: '✅',
-        });
+        toast.success(result.message || "تم حذف المسار الدراسي بنجاح ");
         onSuccess?.();
         onClose();
       } else {
-        // Handle API error response (non-200 status)
-        const errorMessage = result.message || "حدث خطأ أثناء حذف المسار الدراسي";
-        
-        if (errorMessage.includes('500') || 
-            errorMessage.includes('related') || 
-            errorMessage.includes('مرتبط') ||
-            errorMessage.includes('cannot be deleted')) {
-          toast.error('لا يمكن حذف هذا المسار لأنه مرتبط ببيانات أخرى في النظام. يرجى التأكد من عدم وجود طلاب أو مواد دراسية مرتبطة بهذا المسار أولاً.', {
-            duration: 5000,
-            position: 'top-center',
-            style: {
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              padding: '16px',
-              color: '#991b1b',
-              fontFamily: 'Tajawal, sans-serif',
-              textAlign: 'right',
-              direction: 'rtl',
-              maxWidth: '500px',
-              margin: '0 auto'
-            },
-            icon: '⚠️',
-          });
-        } else {
-          toast.error(errorMessage, {
-            duration: 4000,
-            position: 'top-center',
-            style: {
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              padding: '16px',
-              color: '#991b1b',
-              fontFamily: 'Tajawal, sans-serif',
-              textAlign: 'right',
-              direction: 'rtl',
-              maxWidth: '500px',
-              margin: '0 auto'
-            },
-            icon: '❌',
-          });
-        }
+        toast.error(result.message || "حدث خطأ أثناء حذف المسار الدراسي");
       }
     } catch (error) {
       console.error("Error in delete confirmation:", error);
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
-      
-      // Handle network/CORS errors
-      if (errorMessage.includes('Failed to fetch') || 
-           errorMessage.includes('NetworkError') || 
-           errorMessage.includes('CORS')) {
-        toast.error('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الشبكة والمحاولة مرة أخرى.', {
-          duration: 5000,
-          position: 'top-center',
-          style: {
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            padding: '16px',
-            color: '#991b1b',
-            fontFamily: 'Tajawal, sans-serif',
-            textAlign: 'right',
-            direction: 'rtl',
-            maxWidth: '500px',
-            margin: '0 auto'
-          },
-          icon: '🔌',
-        });
-      } 
-      // Handle other errors
-      else {
-        toast.error(errorMessage, {
-          duration: 4000,
-          position: 'top-center',
-          style: {
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            padding: '16px',
-            color: '#991b1b',
-            fontFamily: 'Tajawal, sans-serif',
-            textAlign: 'right',
-            direction: 'rtl',
-            maxWidth: '500px',
-            margin: '0 auto'
-          },
-          icon: '❌',
-        });
-      }
-      
+      toast.error(errorMessage);
       onClose();
     }
   };

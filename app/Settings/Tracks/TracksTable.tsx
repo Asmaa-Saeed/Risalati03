@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -40,6 +40,28 @@ export default function TracksTable({
 }: TracksTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [departments, setDepartments] = useState<{id: number, value: string}[]>([]);
+
+  // Load departments when component mounts
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        
+        const { getDepartments } = await import("@/actions/trackActions");
+        const result = await getDepartments(token);
+        
+        if (result.success && result.data) {
+          setDepartments(result.data);
+        }
+      } catch (error) {
+        console.error("❌ Failed to load departments:", error);
+      }
+    };
+
+    loadDepartments();
+  }, []);
 
   const columnHelper = createColumnHelper<Track>();
 
@@ -132,7 +154,7 @@ export default function TracksTable({
       },
       // 🔹 القسم
       {
-        accessorFn: (row: Track) => row.departmentName,
+        accessorKey: "departmentId",
         id: "departmentName",
         header: ({ column }: HeaderContext<Track, unknown>) => (
           <button
@@ -147,13 +169,19 @@ export default function TracksTable({
             ) : null}
           </button>
         ),
-        cell: ({ row }: CellContext<Track, unknown>) => (
-          <div className="text-right">
-            <span className="font-medium text-gray-900">
-              {row.original.departmentName || "—"}
-            </span>
-          </div>
-        ),
+        cell: ({ row }: CellContext<Track, unknown>) => {
+          const departmentId = row.original.departmentId || row.original.degree?.departmentId;
+          const department = departments.find(d => d.id === departmentId);
+          const departmentName = department?.value || row.original.departmentName || "غير محدد";
+          
+          return (
+            <div className="text-right">
+              <span className="font-medium text-gray-900">
+                {departmentName}
+              </span>
+            </div>
+          );
+        },
       },
       // 🔹 الإجراءات
       {

@@ -99,12 +99,41 @@ export const IntakesService = {
   },
 
   updateIntake: async (data: UpdateIntakeData): Promise<ApiResponse<Intake>> => {
-    const response = await fetch(`${API_BASE_URL}/Intake/${data.id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse<ApiResponse<Intake>>(response);
+    try {
+      const { id, ...updateData } = data;
+      
+      // Format the request body according to API expectations
+      const requestBody = {
+        id: id,
+        name: updateData.name,
+        startDate: updateData.startDate ? new Date(updateData.startDate).toISOString() : undefined,
+        endDate: updateData.endDate ? new Date(updateData.endDate).toISOString() : undefined,
+        academicYear: updateData.startDate ? new Date(updateData.startDate).getFullYear().toString() : undefined
+      };
+
+      console.log('Sending update request with body:', JSON.stringify(requestBody, null, 2));
+      
+      const headers = {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      };
+      
+      const response = await fetch(`${API_BASE_URL}/Intake/${id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+      
+      const result = await handleResponse<ApiResponse<Intake>>(response);
+      console.log('Update successful:', result);
+      return result;
+    } catch (error) {
+      console.error('Error in updateIntake:', error);
+      if (error instanceof Error) {
+        throw new Error(`فشل تحديث العام الدراسي: ${error.message}`);
+      }
+      throw new Error('حدث خطأ غير متوقع أثناء تحديث العام الدراسي');
+    }
   },
 
   deleteIntake: async (id: number): Promise<ApiResponse<{}>> => {

@@ -75,20 +75,25 @@ export class TracksService {
       const result = await getTracks(token || "");
 
       if (result.success && result.data) {
+        // First, get all departments
         const departments = await this.getDepartmentsFromAPI();
+        
+        // Create a map of department IDs to names for faster lookup
+        const departmentMap = new Map<number, string>();
+        departments.forEach(dept => {
+          departmentMap.set(dept.id, dept.value);
+        });
 
         // 🧩 Debug log: show department data
         console.log("📊 Departments fetched:", departments);
+        console.log("📋 Department Map:", Object.fromEntries(departmentMap));
 
         const tracksWithDepartments = result.data.map((track: any) => {
-          const departmentId =
-            track.degree?.departmentId ||
-            track.departmentId ||
-            0;
-
-          const department = departments.find((d) => d.id === departmentId);
-
-          const departmentName = department ? department.value : "غير محدد";
+          // Get department ID from track or its nested degree object
+          const departmentId = track.departmentId || track.degree?.departmentId || 0;
+          
+          // Get department name from the map, or use a default value if not found
+          const departmentName = departmentMap.get(departmentId) || "غير محدد";
 
           // 🧩 Debug log for each track
           console.log(
@@ -97,6 +102,7 @@ export class TracksService {
 
           return {
             ...track,
+            departmentId, // Make sure departmentId is set on the track
             departmentName,
           };
         });
@@ -216,12 +222,20 @@ export class TracksService {
         };
       }
 
+      console.log("🔹 Creating track with data:", JSON.stringify(trackData, null, 2));
+      
+      // Ensure departmentId is a valid number
+      const departmentId = Number(trackData.departmentId);
+      if (isNaN(departmentId) || departmentId <= 0) {
+        throw new Error("معرف القسم غير صالح");
+      }
+
       const { createTrack } = await import('@/actions/trackActions');
       const result = await createTrack({
-        name: trackData.name,
-        code: trackData.code,
-        degreeId: trackData.degreeId,
-        departmentId: trackData.departmentId,
+        name: trackData.name.trim(),
+        code: trackData.code.trim(),
+        degreeId: Number(trackData.degreeId),
+        departmentId: departmentId, // Ensure it's a number
       }, token);
 
       if (result.success && result.data) {

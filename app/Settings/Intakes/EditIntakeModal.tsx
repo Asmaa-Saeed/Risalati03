@@ -64,11 +64,11 @@ export default function EditIntakeModal({ isOpen, onClose, intake, onSave, isLoa
     setIsSubmitting(true);
     try {
       await onSave(formData);
-      toast.success('تم تحديث العام الدراسي بنجاح ✅');
+      // toast.success('تم تحديث العام الدراسي بنجاح ✅');
       onClose();
     } catch (error) {
       console.error('Error updating intake:', error);
-      toast.error('حدث خطأ أثناء تحديث العام الدراسي ❌');
+      // toast.error('حدث خطأ أثناء تحديث العام الدراسي ❌');
     } finally {
       setIsSubmitting(false);
     }

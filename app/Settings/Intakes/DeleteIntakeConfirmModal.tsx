@@ -26,11 +26,11 @@ export default function DeleteIntakeConfirmModal({
     try {
       setIsDeleting(true);
       await onConfirm();
-      toast.success('تم حذف العام الدراسي بنجاح ✅');
+      toast.success('تم حذف العام الدراسي بنجاح ');
       onClose();
     } catch (error) {
       console.error('Error in delete confirmation:', error);
-      toast.error('حدث خطأ أثناء حذف العام الدراسي ❌');
+      toast.error('حدث خطأ أثناء حذف العام الدراسي ');
       throw error;
     } finally {
       setIsDeleting(false);

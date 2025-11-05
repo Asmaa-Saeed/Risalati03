@@ -30,36 +30,40 @@ export default function IntakesManagement() {
     loadIntakes();
   }, []);
 
-  const loadIntakes = async () => {
-    setLoadingIntakes(true);
-    
-    try {
-      const response = await IntakesService.getIntakes();
-      if (response.succeeded) {
-        setIntakes(response.data);
-      }
-    } catch (error) {
-      console.error('Error loading intakes:', error);
-    } finally {
-      setLoadingIntakes(false);
+ const loadIntakes = async () => {
+  setLoadingIntakes(true);
+
+  try {
+    const response = await IntakesService.getIntakes();
+    console.log("Get Intakes Response:", response);
+
+    if (response?.data) {
+      setIntakes(response.data); // ✅ هنا التحديث الحقيقي للـ state
+    } else {
+      console.warn("⚠️ لم يتم العثور على بيانات الأعوام الدراسية.");
     }
-  };
+  } catch (error) {
+    console.error('Error loading intakes:', error);
+  } finally {
+    setLoadingIntakes(false);
+  }
+};
+
 
   // ----------------- Add -----------------
 const handleAddIntake = async (intakeData: any) => {
   setAdding(true);
 
   try {
-    const response = await IntakesService.createIntake(intakeData);
-    if (response.succeeded && response.data) {
-      console.log(response.message || '✅ تمت إضافة العام الدراسي بنجاح');
-      closeModal();
-      setTimeout(() => router.refresh(), 1000);
-    } else {
-      console.log(response.message || '❌ حدث خطأ في إضافة العام الدراسي');
-    }
-  } catch (error) {
-    console.error('❌ خطأ أثناء إضافة العام الدراسي:', error);
+    const result = await IntakesService.createIntake(intakeData);
+
+    toast.success(" تمت إضافة العام الدراسي بنجاح");
+
+    await loadIntakes();
+    closeModal();
+
+  } catch (error: any) {
+    toast.error(error.message || " حدث خطأ أثناء إضافة العام الدراسي");
   } finally {
     setAdding(false);
   }

@@ -152,37 +152,59 @@ export default function TracksTable({
           </div>
         ),
       },
-      // 🔹 القسم
-      {
-        accessorKey: "departmentId",
-        id: "departmentName",
-        header: ({ column }: HeaderContext<Track, unknown>) => (
-          <button
-            className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
-            onClick={() => column.toggleSorting()}
-          >
-            القسم
-            {column.getIsSorted() === "asc" ? (
-              <ChevronUp size={16} />
-            ) : column.getIsSorted() === "desc" ? (
-              <ChevronDown size={16} />
-            ) : null}
-          </button>
-        ),
-        cell: ({ row }: CellContext<Track, unknown>) => {
-          const departmentId = row.original.departmentId || row.original.degree?.departmentId;
-          const department = departments.find(d => d.id === departmentId);
-          const departmentName = department?.value || row.original.departmentName || "غير محدد";
+     // 🔹 القسم
+{
+  accessorKey: "departmentName",
+  id: "departmentName",
+   header: ({ column }: HeaderContext<Track, unknown>) => (
+    <button
+      className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+      onClick={() => column.toggleSorting()}
+    >
+      القسم
+      {column.getIsSorted() === "asc" ? <ChevronUp size={16} /> : column.getIsSorted() === "desc" ? <ChevronDown size={16} /> : null}
+    </button>
+  ),
+  cell: ({ row }: CellContext<Track, unknown>) => {
+    const departmentName = row.original.departmentName || "غير محدد";
+    return (
+      <div className="text-right">
+        <span className="font-medium text-gray-900">{departmentName}</span>
+      </div>
+    );
+  },
+},
+
+      // {
+      //   accessorKey: "departmentName",
+      //   id: "departmentName",
+      //   header: ({ column }: HeaderContext<Track, unknown>) => (
+      //     <button
+      //       className="flex items-center gap-2 text-right font-semibold text-gray-900 hover:text-teal-600 transition-colors"
+      //       onClick={() => column.toggleSorting()}
+      //     >
+      //       القسم
+      //       {column.getIsSorted() === "asc" ? (
+      //         <ChevronUp size={16} />
+      //       ) : column.getIsSorted() === "desc" ? (
+      //         <ChevronDown size={16} />
+      //       ) : null}
+      //     </button>
+      //   ),
+      //   cell: ({ row }: CellContext<Track, unknown>) => {
+      //     const departmentId = row.original.departmentName || row.original.degree?.departmentId;
+      //     const department = departments.find(d => d.id === departmentId);
+      //     const departmentName = department?.value || row.original.departmentName || "غير محدد";
           
-          return (
-            <div className="text-right">
-              <span className="font-medium text-gray-900">
-                {departmentName}
-              </span>
-            </div>
-          );
-        },
-      },
+      //     return (
+      //       <div className="text-right">
+      //         <span className="font-medium text-gray-900">
+      //           {departmentName}
+      //         </span>
+      //       </div>
+      //     );
+      //   },
+      // },
       // 🔹 الإجراءات
       {
         id: "actions",

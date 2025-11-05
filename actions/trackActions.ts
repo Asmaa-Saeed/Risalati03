@@ -281,7 +281,7 @@ export const updateTrack = async (
   id: number,
   trackData: {
     name: string;
-    code?: string;
+    code: string;
     degreeId: number;
     departmentId: number;
   },

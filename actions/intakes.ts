@@ -29,43 +29,32 @@ export interface UpdateIntakeData {
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
-  let data;
+  let result: any;
+
   try {
-    const text = await response.text();
-    data = text ? JSON.parse(text) : {};
-  } catch (error) {
-    console.error("Error parsing response:", error);
-    throw new Error("Invalid response from server");
+    result = await response.json();
+  } catch {
+    throw new Error("خطأ غير متوقع من السيرفر");
   }
 
-  console.log("API Response:", {
-    status: response.status,
-    statusText: response.statusText,
-    url: response.url,
-    data,
-  });
-
+ 
   if (!response.ok) {
-    const errorMessage = data?.message || response.statusText || "Something went wrong";
-    console.error("API Error:", {
-      status: response.status,
-      message: errorMessage,
-      data,
-    });
-    throw new Error(errorMessage);
+    const message =
+      result?.message ||
+      result?.title ||
+      result?.errors?.dto?.[0] ||
+      "حدث خطأ أثناء تنفيذ العملية";
+
+    throw new Error(message);
   }
 
-  if (data && typeof data === "object" && "succeeded" in data) {
-    return data as T;
+  if (result?.succeeded === false) {
+    throw new Error(result?.message || "حدث خطأ أثناء تنفيذ العملية");
   }
 
-  return {
-    succeeded: true,
-    message: "",
-    errors: [],
-    data,
-  } as unknown as T;
+  return result as T;
 }
+
 
 const getAuthHeaders = () => {
   if (typeof window !== "undefined") {
@@ -94,6 +83,9 @@ export const IntakesService = {
     });
     return handleResponse<ApiResponse<Intake>>(response);
   },
+
+
+
 
   updateIntake: async (data: UpdateIntakeData): Promise<ApiResponse<Intake>> => {
   try {

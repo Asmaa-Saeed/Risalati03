@@ -48,20 +48,17 @@ export default function AddIntakeModal({ isOpen, onClose, onSave, isLoading }: A
     e.preventDefault();
     if (!validateForm()) return;
 
-    setIsSubmitting(true);
-    const loadingToast = toast.loading('جاري الحفظ...');
-    try {
-      await onSave(formData);
-      toast.dismiss(loadingToast);
-      toast.success('تمت إضافة العام الدراسي بنجاح ');
-      onClose();
-    } catch (error) {
-      console.error('Error adding intake:', error);
-      toast.dismiss(loadingToast);
-      toast.error('حدث خطأ أثناء إضافة العام الدراسي');
-    } finally {
-      setIsSubmitting(false);
-    }
+  setIsSubmitting(true);
+
+try {
+  await onSave(formData);
+  onClose();
+} catch (error) {
+  console.error('Error adding intake:', error);
+} finally {
+  setIsSubmitting(false);
+}
+
   };
 
   return (

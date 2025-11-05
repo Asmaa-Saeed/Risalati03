@@ -102,17 +102,21 @@ export default function TracksManagement() {
         setCurrentPage(1);
         return { 
           success: true, 
-          message: "✅ تم حذف المسار بنجاح" 
+          message: "تم حذف المسار بنجاح"
         };
       } else {
+        // Return the error message without showing toast here
+        // The modal will handle showing the error message
         return { 
           success: false, 
-          message: response.message || "❌ حدث خطأ في حذف المسار" 
+          message: response.message || "حدث خطأ في حذف المسار"
         };
       }
     } catch (error) {
-      console.error("❌ Error deleting track:", error);
-      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في حذف المسار";
+      console.error("Error deleting track:", error);
+      // Return the error without showing toast here
+      // The modal will handle showing the error message
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
       return { 
         success: false, 
         message: errorMessage 

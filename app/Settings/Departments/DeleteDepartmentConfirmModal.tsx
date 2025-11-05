@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { Department } from "@/lib/departments";
 
 interface DeleteDepartmentConfirmModalProps {
@@ -34,8 +35,110 @@ export default function DeleteDepartmentConfirmModal({
   const handleConfirm = async () => {
     if (!department) return;
 
-    // This will be handled by the parent component (DepartmentsManagement)
-    await onConfirm();
+    try {
+      await onConfirm();
+    } catch (error: any) {
+      const errorMessage = error?.message || 'حدث خطأ غير متوقع';
+      
+      // Handle specific error cases
+      if (errorMessage.includes('500') || 
+          errorMessage.includes('related') || 
+          errorMessage.includes('مرتبط') ||
+          errorMessage.includes('cannot be deleted')) {
+        toast.error('لا يمكن حذف هذا القسم لأنه مرتبط ببيانات أخرى في النظام. يرجى التأكد من عدم وجود أقسام فرعية أو شعب أو طلاب مرتبطين بهذا القسم أولاً.', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl',
+            maxWidth: '500px',
+            margin: '0 auto'
+          },
+          icon: '⚠️',
+        });
+      } 
+      // Handle network/CORS errors
+      else if (errorMessage.includes('Failed to fetch') || 
+               errorMessage.includes('NetworkError') || 
+               errorMessage.includes('CORS')) {
+        toast.error('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الشبكة والمحاولة مرة أخرى.', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '🔌',
+        });
+      }
+      // Handle 404 - Not Found
+      else if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        toast.error('لم يتم العثور على القسم المحدد. قد يكون قد تم حذفه مسبقاً.', {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '🔍',
+        });
+      }
+      // Handle 403/401 - Unauthorized/Forbidden
+      else if (errorMessage.includes('403') || 
+               errorMessage.includes('401') || 
+               errorMessage.includes('Unauthorized') || 
+               errorMessage.includes('Forbidden')) {
+        toast.error('ليس لديك صلاحية حذف هذا القسم. يرجى مراجعة المسؤول.', {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '🚫',
+        });
+      }
+      // For other errors, show the error message
+      else {
+        toast.error(`حدث خطأ: ${errorMessage}`, {
+          duration: 4000,
+          position: 'top-center',
+          style: {
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            padding: '16px',
+            color: '#991b1b',
+            fontFamily: 'Tajawal, sans-serif',
+            textAlign: 'right',
+            direction: 'rtl'
+          },
+          icon: '❌',
+        });
+      }
+      
+      // Close the modal after showing the error
+      onClose();
+    }
   };
 
   if (!isVisible) return null;

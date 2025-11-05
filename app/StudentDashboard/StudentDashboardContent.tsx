@@ -12,6 +12,7 @@ import {
   FaSearchPlus,
   FaSearchMinus,
   FaUndo,
+  FaArrowRight,
 } from "react-icons/fa";
 import Image from "next/image";
 
@@ -81,7 +82,9 @@ function InfoCard({
           </div>
         )}
         <div className="text-right flex-1">
-          <p className="text-sm sm:text-base font-bold text-teal-700 mb-1">{label}</p>
+          <p className="text-sm sm:text-base font-bold text-teal-700 mb-1">
+            {label}
+          </p>
           {value ? (
             <p className="text-xs sm:text-sm font-medium text-gray-500 break-words">
               {value}
@@ -338,8 +341,15 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 to-gray-100 p-2 sm:p-4">
       <div className="max-w-7xl mx-auto">
+        <button
+          onClick={() => router.back()}
+          className="mb-4 flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-md transition-colors duration-200"
+        >
+          <FaArrowRight className="text-teal-600" />
+          <span>عوده</span>
+        </button>
+
         <div className="max-w-7xl mx-auto">
-          {/* Header logos */}
           <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 sm:gap-12 mb-4 sm:mb-0">
             <div className="hidden sm:block w-24 xs:w-28 sm:w-48">
               <Image
@@ -446,7 +456,7 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
                 </h3>
                 {hasRequest ? (
                   <div className="flex flex-col sm:flex-row items-stretch justify-between border rounded-lg bg-gray-50 shadow-md p-4 sm:p-6 gap-4 sm:gap-6">
-                  <div className="flex-1 space-y-2 bg-white rounded-lg p-4 sm:p-6 shadow-md">
+                    <div className="flex-1 space-y-2 bg-white rounded-lg p-4 sm:p-6 shadow-md">
                       <p className="text-sm sm:text-base text-gray-800 font-bold">
                         نوع الطلب: {student.kindOfRequest}
                       </p>
@@ -481,7 +491,6 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
                       لم يتم العثور على طلب التحاق مسجل لهذا الطالب.
                     </p>
 
-                    {/* زر تقديم طلب التحاق جديد */}
                     <a
                       href="/RegistrationCard"
                       className="inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded-lg shadow-xl transition-colors duration-300 w-full sm:w-auto"
@@ -517,7 +526,7 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
                               },
                               body: JSON.stringify({
                                 nationalId,
-                                generalDegree: 1, // يمكن تعديل القيمة حسب الحاجة
+                                generalDegree: 1,
                                 notes: "تم الإنشاء من خلال واجهة المستخدم",
                               }),
                             }
@@ -525,7 +534,6 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
 
                           if (res.ok) {
                             alert("تم إنشاء استمارة القيد بنجاح!");
-                            // إعادة التوجيه للـ Dashboard
                             window.location.href = "/StudentDashboard";
                           } else {
                             const err = await res.json();
@@ -547,19 +555,7 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
                     </button>
                   </div>
                 )}
-
-                {/* زر تسجيل استمارة القيد يظهر فقط إذا الحالة Accepted
-                 {student.status === "مقبول" && (
-                    <a
-                    href="/RegistrationForm"
-                    className="inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded-lg shadow-xl transition-colors duration-300"
-                  >
-                    <FaFileAlt className="w-5 h-5" />
-                    اضغط هنا لتسجيل استمارة القيد
-                  </a>
-                  )} */}
               </div>
-              {/* نهاية قسم الطلبات */}
             </div>
           </div>
         </div>

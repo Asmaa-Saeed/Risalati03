@@ -28,7 +28,6 @@ interface DegreeMsarFilterProps {
   }) => void;
 }
 
-
 const DegreeMsarFilter: React.FC<DegreeMsarFilterProps> = ({
   departmentId,
   onFilterChange,
@@ -60,10 +59,8 @@ const DegreeMsarFilter: React.FC<DegreeMsarFilterProps> = ({
     };
   };
 
-  // 1. جلب الدرجات العلمية
   useEffect(() => {
     if (effectiveDeptId == null) return;
-    // ... (جلب البيانات)
     const url = apiUrl
       ? `${apiUrl}/Degree/by-department/${effectiveDeptId}`
       : `/Degree/by-department/${effectiveDeptId}`;
@@ -81,7 +78,6 @@ const DegreeMsarFilter: React.FC<DegreeMsarFilterProps> = ({
         return res.json();
       })
       .then((data) => {
-        // 💡 تعديل: التحقق من أن البيانات هي مصفوفة قبل التعيين
         if (data?.succeeded && Array.isArray(data.data)) {
           setDegrees(data.data);
         } else {
@@ -91,7 +87,6 @@ const DegreeMsarFilter: React.FC<DegreeMsarFilterProps> = ({
       .catch((err) => console.error("Error fetching degrees:", err));
   }, [effectiveDeptId, apiUrl]);
 
-  // 2. جلب المسارات
   useEffect(() => {
     if (!selectedDegree) {
       setMsars([]);
@@ -116,7 +111,6 @@ const DegreeMsarFilter: React.FC<DegreeMsarFilterProps> = ({
         return res.json();
       })
       .then((data) => {
-        // 💡 تعديل: التحقق من أن البيانات هي مصفوفة قبل التعيين
         if (data?.succeeded && Array.isArray(data.data)) {
           setMsars(data.data);
         } else {

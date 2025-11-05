@@ -34,64 +34,61 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const text = await response.text();
     data = text ? JSON.parse(text) : {};
   } catch (error) {
-    console.error('Error parsing response:', error);
-    throw new Error('Invalid response from server');
+    console.error("Error parsing response:", error);
+    throw new Error("Invalid response from server");
   }
-  
-  console.log('API Response:', {
+
+  console.log("API Response:", {
     status: response.status,
     statusText: response.statusText,
     url: response.url,
-    data
+    data,
   });
-  
+
   if (!response.ok) {
-    const errorMessage = data?.message || response.statusText || 'Something went wrong';
-    console.error('API Error:', {
+    const errorMessage = data?.message || response.statusText || "Something went wrong";
+    console.error("API Error:", {
       status: response.status,
       message: errorMessage,
-      data
+      data,
     });
     throw new Error(errorMessage);
   }
-  
-  // If the response already has the expected structure, return it as is
-  if (data && typeof data === 'object' && 'succeeded' in data) {
+
+  if (data && typeof data === "object" && "succeeded" in data) {
     return data as T;
   }
-  
-  // Otherwise, wrap the response in the expected structure
+
   return {
     succeeded: true,
-    message: '',
+    message: "",
     errors: [],
-    data
+    data,
   } as unknown as T;
 }
 
 const getAuthHeaders = () => {
-  // Get the token from localStorage if running in the browser
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
     return {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
   }
-  return { 'Content-Type': 'application/json' };
+  return { "Content-Type": "application/json" };
 };
 
 export const IntakesService = {
   getIntakes: async (): Promise<ApiResponse<Intake[]>> => {
     const response = await fetch(`${API_BASE_URL}/Intake`, {
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     });
     return handleResponse<ApiResponse<Intake[]>>(response);
   },
 
   createIntake: async (data: CreateIntakeData): Promise<ApiResponse<Intake>> => {
     const response = await fetch(`${API_BASE_URL}/Intake`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
@@ -99,73 +96,74 @@ export const IntakesService = {
   },
 
   updateIntake: async (data: UpdateIntakeData): Promise<ApiResponse<Intake>> => {
-    try {
-      const { id, ...updateData } = data;
-      
-      // Format the request body according to API expectations
-      const requestBody = {
-        id: id,
-        name: updateData.name,
-        startDate: updateData.startDate ? new Date(updateData.startDate).toISOString() : undefined,
-        endDate: updateData.endDate ? new Date(updateData.endDate).toISOString() : undefined,
-        academicYear: updateData.startDate ? new Date(updateData.startDate).getFullYear().toString() : undefined
-      };
+  try {
+    const { id, ...updateData } = data;
 
-      console.log('Sending update request with body:', JSON.stringify(requestBody, null, 2));
-      
-      const headers = {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json'
-      };
-      
-      const response = await fetch(`${API_BASE_URL}/Intake/${id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(requestBody)
-      });
-      
-      const result = await handleResponse<ApiResponse<Intake>>(response);
-      console.log('Update successful:', result);
-      return result;
-    } catch (error) {
-      console.error('Error in updateIntake:', error);
-      if (error instanceof Error) {
-        throw new Error(`فشل تحديث العام الدراسي: ${error.message}`);
-      }
-      throw new Error('حدث خطأ غير متوقع أثناء تحديث العام الدراسي');
+    // Convert to DateOnly format
+    const formatDateOnly = (date: string | undefined) =>
+      date ? date.split("T")[0] : undefined;
+
+    // The API expects the body WITHOUT dto wrapper
+    const requestBody = {
+      id,
+      name: updateData.name,
+      startDate: formatDateOnly(updateData.startDate),
+      endDate: formatDateOnly(updateData.endDate),
+      academicYear: updateData.startDate
+        ? new Date(updateData.startDate).getFullYear().toString()
+        : undefined,
+    };
+
+    console.log("Sending update request body:", requestBody);
+
+    const response = await fetch(`${API_BASE_URL}/Intake/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(requestBody),
+    });
+
+    return handleResponse<ApiResponse<Intake>>(response);
+  } catch (error) {
+    console.error("Error in updateIntake:", error);
+    if (error instanceof Error) {
+      throw new Error(`فشل تحديث العام الدراسي: ${error.message}`);
     }
-  },
+    throw new Error("حدث خطأ غير متوقع أثناء تحديث العام الدراسي");
+  }
+},
+
 
   deleteIntake: async (id: number): Promise<ApiResponse<{}>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/Intake/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+        method: "DELETE",
+        headers: getAuthHeaders(),
       });
-      
-      // Handle 500 errors specifically
+
       if (response.status === 500) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || 'لا يمكن حذف هذا العام الدراسي لأنه مرتبط ببيانات أخرى في النظام';
+        const errorMessage =
+          errorData.message ||
+          "لا يمكن حذف هذا العام الدراسي لأنه مرتبط ببيانات أخرى في النظام";
         return {
           succeeded: false,
           message: errorMessage,
           errors: [errorMessage],
-          data: {}
+          data: {},
         };
       }
-      
+
       return handleResponse<ApiResponse<{}>>(response);
     } catch (error) {
-      console.error('Delete intake error:', error);
+      console.error("Delete intake error:", error);
       return {
         succeeded: false,
-        message: 'حدث خطأ أثناء محاولة حذف العام الدراسي',
-        errors: ['حدث خطأ غير متوقع'],
-        data: {}
+        message: "حدث خطأ أثناء محاولة حذف العام الدراسي",
+        errors: ["حدث خطأ غير متوقع"],
+        data: {},
       };
     }
-  }  
+  },
 };
 
 export default IntakesService;

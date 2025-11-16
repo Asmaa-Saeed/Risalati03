@@ -177,75 +177,67 @@ const MainForm = ({ setActivate }: MainFormProps) => {
     fetchYears();
   }, []);
 
-  const handleProgramChange = async (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    // ✅ لما المستخدم يختار الدرجة العلمية
-    if (name === "degreeId") {
-      const degreeId = value;
-      setForm((prev) => ({ ...prev, degreeId, masarId: "" }));
+const handleProgramChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const programId = e.target.value;
+  setForm((prev) => ({ ...prev, programId, departmentId: "" }));
 
-      console.log("📌 Fetching masars for degree:", degreeId);
+  if (!programId) {
+    setDepartments([]);
+    return;
+  }
 
-      try {
-        const res = await fetch(`${APIURL}/api/Msar/ByDegree/${degreeId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-          cache: "no-store",
-        });
+  try {
+    const res = await fetch(`${APIURL}/Departments/byProgram/${programId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      cache: "no-store",
+    });
 
-        const raw = await res.text();
-        console.log("📥 RAW RESPONSE:", raw);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        if (!res.ok) {
-          console.error("❌ API Error status:", res.status);
-          return;
-        }
+    const json = await res.json();
+    console.log("📥 API Response:", json);
 
-        const json = JSON.parse(raw);
-        console.log("✅ Parsed JSON:", json);
+    // الأقسام موجودة داخل json.data
+    const list = Array.isArray(json.data) ? json.data : [];
+    setDepartments(list.map((d: any) => ({ id: d.id, value: d.name })));
+  } catch (err) {
+    console.error("Error fetching departments:", err);
+    setDepartments([]);
+  }
+};
 
-        let list: any[] = [];
+const handleDepartmentChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const departmentId = e.target.value;
 
-        // نجرب كل احتمالات ال response
-        if (Array.isArray(json)) list = json;
-        else if (Array.isArray(json.data)) list = json.data;
-        else if (Array.isArray(json.result)) list = json.result;
-        else if (json.items) list = json.items;
+  // نمسح قيمة الدرجة العلمية الحالية
+  setForm((prev) => ({ ...prev, departmentId, degreeId: "" }));
 
-        console.log("🎯 Extracted masars list:", list);
+  if (!departmentId) {
+    setDegrees([]);
+    return;
+  }
 
-        setMasars(list.map((m: any) => ({
-          id: m.id,
-          value: m.value || m.name || m.masarName,
-        })));
-      } catch (err) {
-        console.error("🔥 Fetch masars error:", err);
-      }
+  try {
+    const res = await fetch(`${APIURL}/api/Degree/by-department/${departmentId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      cache: "no-store",
+    });
 
-      return;
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const programId = e.target.value;
-    setForm((prev) => ({ ...prev, programId }));
+    const json = await res.json();
+    const list = Array.isArray(json.data) ? json.data : [];
 
-    try {
-      const res = await fetch(`${APIURL}/Departments?id=${programId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        cache: "no-store",
-      });
-      if (!res.ok) throw new Error("Error fetching departments");
-      const result = await res.json();
-      setDepartments(
-        Array.isArray(result.data)
-          ? result.data.map((d: any) => ({ id: d.id, value: d.name }))
-          : []
-      );
-    } catch (err) {
-      console.error(err);
-      setDepartments([]);
-    }
-  };
+    // نعمل map للقائمة الجديدة
+    setDegrees(list.map((d: any) => ({ id: d.id, value: d.name })));
+  } catch (err) {
+    console.error("Error fetching degrees:", err);
+    setDegrees([]);
+  }
+};
+
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -408,19 +400,16 @@ const MainForm = ({ setActivate }: MainFormProps) => {
                 <label className="ml-4 text-gray-700">نوع الطلب:</label>{" "}
                 <select
                   name="requestTypeId"
-                  value={form.requestTypeId}
+                  value={form.requestTypeId || kindOfRequests[0]?.id || ""} // أول اختيار إذا فاضي
                   onChange={handleFormChange}
                   className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   required
                 >
-                  {" "}
-                  <option value="">اختر نوع الطلب</option>{" "}
                   {kindOfRequests.map((request) => (
                     <option key={request.id} value={request.id}>
-                      {" "}
-                      {request.value}{" "}
+                      {request.value}
                     </option>
-                  ))}{" "}
+                  ))}
                 </select>{" "}
               </div>{" "}
               {/* Personal Information Section */}{" "}
@@ -635,26 +624,28 @@ const MainForm = ({ setActivate }: MainFormProps) => {
                   <div className="space-y-1">
                     {" "}
                     <label className="block text-sm font-medium text-gray-700">
-                      القسم  
+                      القسم
                     </label>{" "}
                     <select
-                      name="departmentId"
-                      value={form.departmentId}
-                      onChange={handleFormChange}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      required
-                    >
-                      {" "}
-                      <option value="">اختر القسم</option>{" "}
-                      {departments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {" "}
-                          {dept.value}{" "}
-                        </option>
-                      ))}{" "}
-                    </select>{" "}
+  name="departmentId"
+  value={form.departmentId}
+  onChange={handleFormChange}
+  disabled={!form.programId}
+  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+    !form.programId ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+  }`}
+  required
+>
+  <option value="">اختر القسم</option>
+  {departments.map((dept) => (
+    <option key={dept.id} value={dept.id}>
+      {dept.value}
+    </option>
+  ))}
+</select>
+
+{" "}
                   </div>{" "}
-                 
                   <div className="space-y-1">
                     {" "}
                     <label className="block text-sm font-medium text-gray-700">
@@ -683,7 +674,7 @@ const MainForm = ({ setActivate }: MainFormProps) => {
                     {" "}
                     <label className="block text-sm font-medium text-gray-700">
                       {" "}
-                    المسار{" "}
+                      المسار{" "}
                     </label>{" "}
                     <select
                       name="masarId"

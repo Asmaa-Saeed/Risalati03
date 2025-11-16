@@ -591,9 +591,13 @@ export default function StudentRegistrationPage() {
   name="militaryService"
   value={formData.militaryService}
   onChange={handleChange}
-  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
   required={gender === "ذكر"}
   disabled={gender === "أنثى"}
+  className={`
+    w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none
+    focus:ring-2 focus:ring-custom-teal focus:border-transparent
+    ${gender === "أنثى" ? "bg-gray-100 cursor-not-allowed" : " cursor-pointer"}
+  `}
 >
   {militaryServices.map((m: any) => (
     <option key={m.id} value={m.id}>
@@ -601,6 +605,7 @@ export default function StudentRegistrationPage() {
     </option>
   ))}
 </select>
+
 
                 
 

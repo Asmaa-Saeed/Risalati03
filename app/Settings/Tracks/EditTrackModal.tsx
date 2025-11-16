@@ -10,12 +10,10 @@ import { UpdateTrackData, LookupItem } from "@/lib/tracks";
 const trackSchema = z.object({
   name: z
     .string()
-    .min(1, "اسم المسار مطلوب")
-    .min(2, "اسم المسار يجب أن يكون حرفين على الأقل"),
+    .min(1, "اسم المسار مطلوب"),
   code: z
     .string()
-    .min(1, "كود المسار مطلوب")
-    .min(2, "كود المسار يجب أن يكون حرفين على الأقل"),
+    .min(1, "كود المسار مطلوب"),
   degreeId: z.number().min(1, "الدرجة العلمية مطلوبة"),
   departmentId: z.number().min(1, "القسم مطلوب"),
 });

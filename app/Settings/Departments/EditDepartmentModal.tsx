@@ -14,9 +14,9 @@ import {
 
 // ✅ Validation Schema
 const departmentSchema = z.object({
-  name: z.string().min(2, "اسم القسم يجب أن يكون حرفين على الأقل"),
-  code: z.string().min(1, "كود القسم مطلوب").min(2, "كود القسم يجب أن يكون حرفين على الأقل").max(3, "كود القسم يجب أن يكون 3 أحرف بالضبط"),
-  description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
+  name: z.string().min(1, "اسم القسم مطلوب"),
+  code: z.string().min(1, "كود القسم مطلوب"),
+  description: z.string(),
   programId: z.string().min(1, "البرنامج مطلوب"),
 });
 

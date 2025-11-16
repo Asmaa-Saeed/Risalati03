@@ -177,67 +177,91 @@ const MainForm = ({ setActivate }: MainFormProps) => {
     fetchYears();
   }, []);
 
-const handleProgramChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-  const programId = e.target.value;
-  setForm((prev) => ({ ...prev, programId, departmentId: "" }));
-
-  if (!programId) {
+  // ======== Program Change ========
+  const handleProgramChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const programId = e.target.value;
+    setForm((prev) => ({ ...prev, programId, departmentId: "", degreeId: "" }));
     setDepartments([]);
-    return;
-  }
-
-  try {
-    const res = await fetch(`${APIURL}/Departments/byProgram/${programId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      cache: "no-store",
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const json = await res.json();
-    console.log("📥 API Response:", json);
-
-    // الأقسام موجودة داخل json.data
-    const list = Array.isArray(json.data) ? json.data : [];
-    setDepartments(list.map((d: any) => ({ id: d.id, value: d.name })));
-  } catch (err) {
-    console.error("Error fetching departments:", err);
-    setDepartments([]);
-  }
-};
-
-const handleDepartmentChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-  const departmentId = e.target.value;
-
-  // نمسح قيمة الدرجة العلمية الحالية
-  setForm((prev) => ({ ...prev, departmentId, degreeId: "" }));
-
-  if (!departmentId) {
     setDegrees([]);
-    return;
-  }
 
-  try {
-    const res = await fetch(`${APIURL}/api/Degree/by-department/${departmentId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      cache: "no-store",
-    });
+    if (!programId) return;
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    try {
+      const res = await fetch(`${APIURL}/Departments/byProgram/${programId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const list = Array.isArray(json.data) ? json.data : [];
+      setDepartments(list.map((d: any) => ({ id: d.id, value: d.name })));
+    } catch (err) {
+      console.error("Error fetching departments:", err);
+      setDepartments([]);
+    }
+  };
 
-    const json = await res.json();
-    const list = Array.isArray(json.data) ? json.data : [];
-
-    // نعمل map للقائمة الجديدة
-    setDegrees(list.map((d: any) => ({ id: d.id, value: d.name })));
-  } catch (err) {
-    console.error("Error fetching degrees:", err);
+  // ======== Department Change ========
+  const handleDepartmentChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const departmentId = e.target.value;
+    setForm((prev) => ({ ...prev, departmentId, degreeId: "" }));
     setDegrees([]);
-  }
-};
 
+    if (!departmentId) return;
 
+    try {
+      const res = await fetch(
+        `${APIURL}/Degree/by-department/${departmentId}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          cache: "no-store",
+        }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const list = Array.isArray(json.data) ? json.data : [];
+      setDegrees(list.map((d: any) => ({ id: d.id, value: d.name })));
+    } catch (err) {
+      console.error("Error fetching degrees:", err);
+      setDegrees([]);
+    }
+  };
 
+  // ======== Degree Change ========
+  const handleDegreeChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const degreeId = e.target.value;
+
+    // مسح قيمة المسار الحالية
+    setForm((prev) => ({ ...prev, degreeId, masarId: "" }));
+    setMasars([]);
+
+    if (!degreeId) return;
+
+    try {
+      const res = await fetch(`${APIURL}/Msar/ByDegree/${degreeId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        cache: "no-store",
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const json = await res.json();
+      const list = Array.isArray(json.data) ? json.data : [];
+
+      // map للقائمة الجديدة
+      const mappedMasars = list.map((m: any) => ({ id: m.id, value: m.name }));
+      setMasars(mappedMasars);
+    } catch (err) {
+      console.error("Error fetching masars:", err);
+      setMasars([]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -597,12 +621,12 @@ const handleDepartmentChange = async (e: React.ChangeEvent<HTMLSelectElement>) =
                 </div>{" "}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {" "}
-                  {/* Program */}{" "}
+                  {/* Program */}
+                  {/* Program */}
                   <div className="space-y-1">
-                    {" "}
                     <label className="block text-sm font-medium text-gray-700">
                       البرنامج
-                    </label>{" "}
+                    </label>
                     <select
                       name="programId"
                       value={form.programId}
@@ -610,88 +634,88 @@ const handleDepartmentChange = async (e: React.ChangeEvent<HTMLSelectElement>) =
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       required
                     >
-                      {" "}
-                      <option value="">اختر البرنامج</option>{" "}
+                      <option value="">اختر البرنامج</option>
                       {programs.map((prog) => (
                         <option key={prog.id} value={prog.id}>
-                          {" "}
-                          {prog.value}{" "}
+                          {prog.value}
                         </option>
-                      ))}{" "}
-                    </select>{" "}
-                  </div>{" "}
-                  {/* Department */}{" "}
+                      ))}
+                    </select>
+                  </div>
+                  {/* Department */}
                   <div className="space-y-1">
-                    {" "}
                     <label className="block text-sm font-medium text-gray-700">
                       القسم
-                    </label>{" "}
+                    </label>
                     <select
-  name="departmentId"
-  value={form.departmentId}
-  onChange={handleFormChange}
-  disabled={!form.programId}
-  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
-    !form.programId ? "bg-gray-100 cursor-not-allowed" : "bg-white"
-  }`}
-  required
->
-  <option value="">اختر القسم</option>
-  {departments.map((dept) => (
-    <option key={dept.id} value={dept.id}>
-      {dept.value}
-    </option>
-  ))}
-</select>
-
-{" "}
-                  </div>{" "}
+                      name="departmentId"
+                      value={form.departmentId}
+                      onChange={handleDepartmentChange}
+                      disabled={!form.programId}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        !form.programId
+                          ? "bg-gray-100 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
+                      required
+                    >
+                      <option value="">اختر القسم</option>
+                      {departments.map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.value}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {/* Degree */}
                   <div className="space-y-1">
-                    {" "}
                     <label className="block text-sm font-medium text-gray-700">
-                      {" "}
-                      الدرجة العلمية{" "}
-                    </label>{" "}
+                      الدرجة العلمية
+                    </label>
                     <select
                       name="degreeId"
                       value={form.degreeId}
-                      onChange={handleFormChange}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      onChange={handleDegreeChange}
+                      disabled={!form.departmentId}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        !form.departmentId
+                          ? "bg-gray-100 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
                       required
                     >
-                      {" "}
-                      <option value="">اختر الدرجة العلمية</option>{" "}
-                      {degrees.map((masar) => (
-                        <option key={masar.id} value={masar.id}>
-                          {" "}
-                          {masar.value}{" "}
+                      <option value="">اختر الدرجة العلمية</option>
+                      {degrees.map((deg) => (
+                        <option key={deg.id} value={deg.id}>
+                          {deg.value}
                         </option>
-                      ))}{" "}
-                    </select>{" "}
-                  </div>{" "}
-                  {/* المسار */}
+                      ))}
+                    </select>
+                  </div>
+                  {/* Masar */}
                   <div className="space-y-1">
-                    {" "}
                     <label className="block text-sm font-medium text-gray-700">
-                      {" "}
-                      المسار{" "}
-                    </label>{" "}
+                      المسار
+                    </label>
                     <select
                       name="masarId"
                       value={form.masarId}
                       onChange={handleFormChange}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      disabled={!form.degreeId} // ✅ معطل حتى يتم اختيار الدرجة
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        !form.degreeId
+                          ? "bg-gray-100 cursor-not-allowed"
+                          : "bg-white"
+                      }`}
                       required
                     >
-                      {" "}
-                      <option value="">اختر المسار</option>{" "}
+                      <option value="">اختر المسار</option>
                       {masars.map((masar) => (
                         <option key={masar.id} value={masar.id}>
-                          {" "}
-                          {masar.value}{" "}
+                          {masar.value}
                         </option>
-                      ))}{" "}
-                    </select>{" "}
+                      ))}
+                    </select>
                   </div>{" "}
                   {/* Year */}{" "}
                   <div className="space-y-1">

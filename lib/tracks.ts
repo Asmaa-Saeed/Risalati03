@@ -1,7 +1,4 @@
 // lib/tracks.ts
-// =========================
-// TracksService.ts - Fixed version with correct department mapping and create/update
-
 export interface Track {
   id: number;
   name: string;
@@ -59,7 +56,7 @@ export class TracksService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // ================= GET TRACKS
+  // ================= GET ALL TRACKS
   static async getTracks(): Promise<TracksApiResponse> {
     await this.delay();
     try {
@@ -71,7 +68,12 @@ export class TracksService {
       const result = await res.json();
 
       if (!res.ok || !result.succeeded) {
-        return { succeeded: false, message: result.message || "حدث خطأ في جلب المسارات", errors: result.errors || ["Server error"], data: [] };
+        return {
+          succeeded: false,
+          message: result.message || "حدث خطأ في جلب المسارات",
+          errors: result.errors || ["Server error"],
+          data: []
+        };
       }
 
       const tracksWithDepartments = result.data.map((track: any) => {
@@ -92,83 +94,91 @@ export class TracksService {
       return { succeeded: false, message: "حدث خطأ في جلب البيانات", errors: [error.message || "Database connection failed"], data: [] };
     }
   }
-// ================= CREATE TRACK
-static async createTrack(data: CreateTrackData): Promise<TrackApiResponse> {
-  try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) return { succeeded: false, data: null, errors: ["يجب تسجيل الدخول أولاً"], message: "يجب تسجيل الدخول أولاً" };
 
-    const res = await fetch(`https://professor.runasp.net/api/Msar`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    });
+  // ================= GET TRACKS BY DEGREE
+  static async getTracksByDegree(degreeId: number): Promise<TracksApiResponse> {
+    const allTracks = await this.getTracks();
+    if (!allTracks.succeeded) return allTracks;
 
-    // هنا نحاول parse الـ JSON حتى لو كان خطأ
-    let result: any = {};
-    try { result = await res.json(); } catch {}
+    const filteredTracks = allTracks.data.filter(track => track.degreeId === degreeId);
+    return { ...allTracks, data: filteredTracks };
+  }
 
-    if (!res.ok || !result.succeeded) {
-      const serverMessage = result?.message || (result?.errors ? Object.values(result.errors).flat().join("، ") : "حدث خطأ في الإضافة");
-      return { succeeded: false, data: null, errors: result?.errors || [serverMessage], message: serverMessage };
+  // ================= CREATE TRACK
+  static async createTrack(data: CreateTrackData): Promise<TrackApiResponse> {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return { succeeded: false, data: null, errors: ["يجب تسجيل الدخول أولاً"], message: "يجب تسجيل الدخول أولاً" };
+
+      const res = await fetch(`https://professor.runasp.net/api/Msar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+
+      let result: any = {};
+      try { result = await res.json(); } catch {}
+
+      if (!res.ok || !result.succeeded) {
+        const serverMessage = result?.message || (result?.errors ? Object.values(result.errors).flat().join("، ") : "حدث خطأ في الإضافة");
+        return { succeeded: false, data: null, errors: result?.errors || [serverMessage], message: serverMessage };
+      }
+
+      return { succeeded: true, data: result.data, message: result.message || "تم إنشاء المسار بنجاح", errors: [] };
+    } catch (error: any) {
+      const msg = error?.message || "حدث خطأ غير متوقع";
+      return { succeeded: false, data: null, errors: [msg], message: msg };
     }
-
-    return { succeeded: true, data: result.data, message: result.message || "تم إنشاء المسار بنجاح", errors: [] };
-  } catch (error: any) {
-    const msg = error?.message || "حدث خطأ غير متوقع";
-    return { succeeded: false, data: null, errors: [msg], message: msg };
   }
-}
 
-// ================= UPDATE TRACK
-static async updateTrack(data: UpdateTrackData): Promise<TrackApiResponse> {
-  try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) return { succeeded: false, data: null, errors: ["يجب تسجيل الدخول أولاً"], message: "يجب تسجيل الدخول أولاً" };
+  // ================= UPDATE TRACK
+  static async updateTrack(data: UpdateTrackData): Promise<TrackApiResponse> {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return { succeeded: false, data: null, errors: ["يجب تسجيل الدخول أولاً"], message: "يجب تسجيل الدخول أولاً" };
 
-    const res = await fetch(`https://professor.runasp.net/api/Msar/${data.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    });
+      const res = await fetch(`https://professor.runasp.net/api/Msar/${data.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
 
-    let result: any = {};
-    try { result = await res.json(); } catch {}
+      let result: any = {};
+      try { result = await res.json(); } catch {}
 
-    if (!res.ok || !result.succeeded) {
-      const serverMessage = result?.message || (result?.errors ? Object.values(result.errors).flat().join("، ") : "حدث خطأ في التعديل");
-      return { succeeded: false, data: null, errors: result?.errors || [serverMessage], message: serverMessage };
+      if (!res.ok || !result.succeeded) {
+        const serverMessage = result?.message || (result?.errors ? Object.values(result.errors).flat().join("، ") : "حدث خطأ في التعديل");
+        return { succeeded: false, data: null, errors: result?.errors || [serverMessage], message: serverMessage };
+      }
+
+      return { succeeded: true, data: result.data, message: result.message || "تم تحديث المسار بنجاح", errors: [] };
+    } catch (error: any) {
+      const msg = error?.message || "حدث خطأ غير متوقع";
+      return { succeeded: false, data: null, errors: [msg], message: msg };
     }
-
-    return { succeeded: true, data: result.data, message: result.message || "تم تحديث المسار بنجاح", errors: [] };
-  } catch (error: any) {
-    const msg = error?.message || "حدث خطأ غير متوقع";
-    return { succeeded: false, data: null, errors: [msg], message: msg };
   }
-}
 
-// ================= DELETE TRACK
-static async deleteTrack(id: number): Promise<{ succeeded: boolean; message?: string; errors?: string[] }> {
-  try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) return { succeeded: false, message: "الرجاء تسجيل الدخول أولاً", errors: ["Authentication required"] };
+  // ================= DELETE TRACK
+  static async deleteTrack(id: number): Promise<{ succeeded: boolean; message?: string; errors?: string[] }> {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return { succeeded: false, message: "الرجاء تسجيل الدخول أولاً", errors: ["Authentication required"] };
 
-    const res = await fetch(`https://professor.runasp.net/api/Msar/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const res = await fetch(`https://professor.runasp.net/api/Msar/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    let result: any = {};
-    try { result = await res.json(); } catch {}
+      let result: any = {};
+      try { result = await res.json(); } catch {}
 
-    const serverMessage = result?.message || (result?.errors ? Object.values(result.errors).flat().join("، ") : "حدث خطأ في الحذف");
-    return result.succeeded
-      ? { succeeded: true, message: serverMessage }
-      : { succeeded: false, message: serverMessage, errors: result?.errors || [serverMessage] };
-  } catch (error: any) {
-    const msg = error?.message || "حدث خطأ في حذف المسار";
-    return { succeeded: false, message: msg, errors: [msg] };
+      const serverMessage = result?.message || (result?.errors ? Object.values(result.errors).flat().join("، ") : "حدث خطأ في الحذف");
+      return result.succeeded
+        ? { succeeded: true, message: serverMessage }
+        : { succeeded: false, message: serverMessage, errors: result?.errors || [serverMessage] };
+    } catch (error: any) {
+      const msg = error?.message || "حدث خطأ في حذف المسار";
+      return { succeeded: false, message: msg, errors: [msg] };
+    }
   }
-}
-
 }

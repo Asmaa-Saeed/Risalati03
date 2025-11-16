@@ -10,7 +10,6 @@ export type FormType =
   | "application"
   | "registration"
   | "suspension"
-
   | "withdrawal"
   | "other"
   | null;
@@ -63,6 +62,7 @@ const MainForm = ({ setActivate }: MainFormProps) => {
   >([]);
   const [departments, setDepartments] = useState<Option[]>([]);
   const [years, setYears] = useState<Option[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFormChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -180,54 +180,53 @@ const MainForm = ({ setActivate }: MainFormProps) => {
   const handleProgramChange = async (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
-     const { name, value } = e.target;
+    const { name, value } = e.target;
     // ✅ لما المستخدم يختار الدرجة العلمية
-  if (name === "degreeId") {
-  const degreeId = value;
-  setForm((prev) => ({ ...prev, degreeId, masarId: "" }));
+    if (name === "degreeId") {
+      const degreeId = value;
+      setForm((prev) => ({ ...prev, degreeId, masarId: "" }));
 
-  console.log("📌 Fetching masars for degree:", degreeId);
+      console.log("📌 Fetching masars for degree:", degreeId);
 
-  try {
-    const res = await fetch(`${APIURL}/api/Msar/ByDegree/${degreeId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      cache: "no-store",
-    });
+      try {
+        const res = await fetch(`${APIURL}/api/Msar/ByDegree/${degreeId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          cache: "no-store",
+        });
 
-    const raw = await res.text();
-    console.log("📥 RAW RESPONSE:", raw);
+        const raw = await res.text();
+        console.log("📥 RAW RESPONSE:", raw);
 
-    if (!res.ok) {
-      console.error("❌ API Error status:", res.status);
+        if (!res.ok) {
+          console.error("❌ API Error status:", res.status);
+          return;
+        }
+
+        const json = JSON.parse(raw);
+        console.log("✅ Parsed JSON:", json);
+
+        let list: any[] = [];
+
+        // نجرب كل احتمالات ال response
+        if (Array.isArray(json)) list = json;
+        else if (Array.isArray(json.data)) list = json.data;
+        else if (Array.isArray(json.result)) list = json.result;
+        else if (json.items) list = json.items;
+
+        console.log("🎯 Extracted masars list:", list);
+
+        setMasars(list.map((m: any) => ({
+          id: m.id,
+          value: m.value || m.name || m.masarName,
+        })));
+      } catch (err) {
+        console.error("🔥 Fetch masars error:", err);
+      }
+
       return;
     }
 
-    const json = JSON.parse(raw);
-    console.log("✅ Parsed JSON:", json);
-
-    let list: any[] = [];
-
-    // نجرب كل احتمالات ال response
-    if (Array.isArray(json)) list = json;
-    else if (Array.isArray(json.data)) list = json.data;
-    else if (Array.isArray(json.result)) list = json.result;
-    else if (json.items) list = json.items;
-
-    console.log("🎯 Extracted masars list:", list);
-
-    setMasars(list.map((m: any) => ({
-      id: m.id,
-      value: m.value || m.name || m.masarName,
-    })));
-  } catch (err) {
-    console.error("🔥 Fetch masars error:", err);
-  }
-
-  return;
-}
-
     const programId = e.target.value;
-    
     setForm((prev) => ({ ...prev, programId }));
 
     try {
@@ -251,27 +250,38 @@ const MainForm = ({ setActivate }: MainFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        let apiKey = key;
-        if (key === "phoneNumber") apiKey = "Phone";
-        else if (key === "firstName") apiKey = "FirstName";
-        else if (key === "secondName") apiKey = "SecondName";
-        else if (key === "thirdName") apiKey = "ThirdName";
-        else if (key === "requestTypeId") apiKey = "KindOfRequest";
-        else if (key === "semesterId") apiKey = "Semester";
-        else if (key === "languageId") apiKey = "Language";
-        if (key === "year" && value) {
-          formData.append("Year", value.toString());
-        } else if (value instanceof File) formData.append(apiKey, value);
-        else if (value) formData.append(apiKey, value as string);
-      });
+    setIsSubmitting(true);
 
-      // قبل إرسال الطلب
-      for (let pair of formData.entries()) {
-        console.log(pair[0] + ": " + pair[1]);
-      }
+    try {
+      const mapping: Record<string, string> = {
+        firstName: "FirstName",
+        secondName: "SecondName",
+        thirdName: "ThirdName",
+        nationalId: "NationalId",
+        phoneNumber: "Phone",
+        degreeId: "DegreeId",
+        masarId: "MsarId",
+        departmentId: "DepartmentId",
+        requestTypeId: "KindOfRequest",
+        semesterId: "Semester",
+        languageId: "Language",
+        year: "Year",
+        BachelorDegree: "BachelorDegree",
+        MasterDegree: "MasterDegree",
+        EquivalencyDegree: "EquivalencyDegree",
+      };
+
+      const formData = new FormData();
+
+      Object.entries(form).forEach(([key, value]) => {
+        const apiKey = mapping[key] || key;
+
+        if (value instanceof File) {
+          formData.append(apiKey, value);
+        } else if (value !== null && value !== "") {
+          formData.append(apiKey, value);
+        }
+      });
 
       const res = await fetch(
         `${APIURL}/RegisterationCard/AddRegistrationCard`,
@@ -292,6 +302,8 @@ const MainForm = ({ setActivate }: MainFormProps) => {
       );
     } catch (err) {
       console.error("Error generating registration card:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -392,23 +404,25 @@ const MainForm = ({ setActivate }: MainFormProps) => {
               {" "}
               {/* نوع الطلب */}{" "}
               <div className="flex items-center justify-center mb-6 bg-gray-50 p-4 rounded-lg">
-  <label className="ml-4 text-gray-700">نوع الطلب:</label>
-
-  <select
-    name="requestTypeId"
-    value={form.requestTypeId}
-    onChange={handleFormChange}
-    className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-    required
-  >
-    {kindOfRequests.map((request) => (
-      <option key={request.id} value={request.id}>
-        {request.value}
-      </option>
-    ))}
-  </select>
-</div>
-
+                {" "}
+                <label className="ml-4 text-gray-700">نوع الطلب:</label>{" "}
+                <select
+                  name="requestTypeId"
+                  value={form.requestTypeId}
+                  onChange={handleFormChange}
+                  className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  required
+                >
+                  {" "}
+                  <option value="">اختر نوع الطلب</option>{" "}
+                  {kindOfRequests.map((request) => (
+                    <option key={request.id} value={request.id}>
+                      {" "}
+                      {request.value}{" "}
+                    </option>
+                  ))}{" "}
+                </select>{" "}
+              </div>{" "}
               {/* Personal Information Section */}{" "}
               <div className="space-y-6">
                 {" "}
@@ -830,8 +844,7 @@ const MainForm = ({ setActivate }: MainFormProps) => {
                   type="submit"
                   className="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 cursor-pointer font-bold hover:text-white transition-colors w-full sm:w-auto text-center"
                 >
-                  {" "}
-                  حفظ{" "}
+                  {isSubmitting ? "جاري الحفظ..." : "حفظ"}
                 </button>{" "}
               </div>{" "}
             </form>{" "}

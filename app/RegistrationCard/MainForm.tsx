@@ -139,7 +139,7 @@ const MainForm = ({ setActivate }: MainFormProps) => {
     fetchData("degrees", setDegrees);
     fetchData("majors", setMajors);
     fetchData("grades", setGrades);
-    fetchData("masars", setMasars);
+    fetchData("msars", setMasars);
     fetchData("semesters", setSemesters);
     fetchData("languages", setLanguages);
 
@@ -183,30 +183,49 @@ const MainForm = ({ setActivate }: MainFormProps) => {
      const { name, value } = e.target;
     // ✅ لما المستخدم يختار الدرجة العلمية
   if (name === "degreeId") {
-    setForm((prev) => ({ ...prev, degreeId: value, masarId: "" })); // reset المسار
+  const degreeId = value;
+  setForm((prev) => ({ ...prev, degreeId, masarId: "" }));
 
-    try {
-      const res = await fetch(
-        `${APIURL}/Lookups/GetMsaratByDegreeId?degreeId=${value}`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-          cache: "no-store",
-        }
-      );
+  console.log("📌 Fetching masars for degree:", degreeId);
 
-      if (!res.ok) throw new Error("Error fetching masars");
+  try {
+    const res = await fetch(`${APIURL}/api/Msar/ByDegree/${degreeId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      cache: "no-store",
+    });
 
-      const data = await res.json();
+    const raw = await res.text();
+    console.log("📥 RAW RESPONSE:", raw);
 
-      // لو الـ API بيرجع Array زي [{ id, value }]
-      setMasars(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Error fetching masars:", err);
-      setMasars([]);
+    if (!res.ok) {
+      console.error("❌ API Error status:", res.status);
+      return;
     }
 
-    return;
+    const json = JSON.parse(raw);
+    console.log("✅ Parsed JSON:", json);
+
+    let list: any[] = [];
+
+    // نجرب كل احتمالات ال response
+    if (Array.isArray(json)) list = json;
+    else if (Array.isArray(json.data)) list = json.data;
+    else if (Array.isArray(json.result)) list = json.result;
+    else if (json.items) list = json.items;
+
+    console.log("🎯 Extracted masars list:", list);
+
+    setMasars(list.map((m: any) => ({
+      id: m.id,
+      value: m.value || m.name || m.masarName,
+    })));
+  } catch (err) {
+    console.error("🔥 Fetch masars error:", err);
   }
+
+  return;
+}
+
     const programId = e.target.value;
     
     setForm((prev) => ({ ...prev, programId }));
@@ -373,25 +392,23 @@ const MainForm = ({ setActivate }: MainFormProps) => {
               {" "}
               {/* نوع الطلب */}{" "}
               <div className="flex items-center justify-center mb-6 bg-gray-50 p-4 rounded-lg">
-                {" "}
-                <label className="ml-4 text-gray-700">نوع الطلب:</label>{" "}
-                <select
-                  name="requestTypeId"
-                  value={form.requestTypeId}
-                  onChange={handleFormChange}
-                  className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  required
-                >
-                  {" "}
-                  <option value="">اختر نوع الطلب</option>{" "}
-                  {kindOfRequests.map((request) => (
-                    <option key={request.id} value={request.id}>
-                      {" "}
-                      {request.value}{" "}
-                    </option>
-                  ))}{" "}
-                </select>{" "}
-              </div>{" "}
+  <label className="ml-4 text-gray-700">نوع الطلب:</label>
+
+  <select
+    name="requestTypeId"
+    value={form.requestTypeId}
+    onChange={handleFormChange}
+    className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+    required
+  >
+    {kindOfRequests.map((request) => (
+      <option key={request.id} value={request.id}>
+        {request.value}
+      </option>
+    ))}
+  </select>
+</div>
+
               {/* Personal Information Section */}{" "}
               <div className="space-y-6">
                 {" "}
@@ -595,8 +612,7 @@ const MainForm = ({ setActivate }: MainFormProps) => {
                       {programs.map((prog) => (
                         <option key={prog.id} value={prog.id}>
                           {" "}
-                          {prog.value} (
-                          {prog.type === "academic" ? "أكاديمي" : "مهني"}){" "}
+                          {prog.value}{" "}
                         </option>
                       ))}{" "}
                     </select>{" "}

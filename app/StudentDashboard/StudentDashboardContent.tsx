@@ -247,11 +247,19 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
 
         const registrationJson = await registrationRes.json();
 
+        console.log("Registration API Response:", registrationJson);
+
         if (
           registrationRes.ok &&
           registrationJson.succeeded &&
           registrationJson.data
         ) {
+          console.log('Name fields:', {
+            firstName: registrationJson.data.firstName,
+            secondName: registrationJson.data.secondName,
+            thirdName: registrationJson.data.thirdName,
+            fullName: `${registrationJson.data.thirdName} ${registrationJson.data.secondName} ${registrationJson.data.firstName}`
+          });
           studentData = registrationJson.data;
           setServerMessage(
             registrationJson.message || "تم جلب بيانات بطاقة التسجيل بنجاح."
@@ -331,6 +339,14 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
   if (!student)
     return <p className="text-center mt-10 text-red-500">{serverMessage}</p>;
 
+  // Debug log to check name fields
+  console.log('Name fields:', {
+    firstName: student.firstName,
+    secondName: student.secondName,
+    thirdName: student.thirdName,
+    fullName: `${student.thirdName} ${student.secondName} ${student.firstName}`
+  });
+
   const currentStatus = statusMap[student.status as StatusKey] || {
     text: "حالة غير معروفة",
     color: "bg-gray-400",
@@ -381,7 +397,7 @@ export default function StudentHeader({ nationalId }: StudentHeaderProps) {
                   <FaGraduationCap className="text-teal-600 text-2xl sm:text-3xl" />
                 </div>
                 <h2 className="text-lg sm:text-2xl font-bold text-gray-800 tracking-wide">
-                  {student.firstName} {student.secondName} {student.thirdName}
+                    {student.firstName} {student.secondName} {student.thirdName} 
                 </h2>
                 <button
                   onClick={() => router.push("/StudentProfile")}

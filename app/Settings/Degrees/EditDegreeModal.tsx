@@ -147,8 +147,6 @@ const EditDegreeModal: React.FC<EditDegreeModalProps> = ({ isOpen, onClose, onSu
             }
           });
           
-          // Show error to user (you might want to use a toast or alert)
-          // toast.error('فشل في تحميل الدرجات العلمية. يرجى المحاولة مرة أخرى.');
         }
       } catch (error) {
         console.error('All attempts to fetch general degrees failed:', error);

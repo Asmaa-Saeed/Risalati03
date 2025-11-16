@@ -88,11 +88,6 @@ export default function DegreesManagement() {
     }
   };
 
-  const handleAddDegreeWrapper = () => {
-    const degreeData: CreateDegreeData = { /* initialize with appropriate data */ };
-    handleAddDegree(degreeData);
-  };
-
   const handleEditDegree = async (degreeData: UpdateDegreeData) => {
     setSaving(true);
     try {
@@ -268,7 +263,7 @@ export default function DegreesManagement() {
       <AddDegreeModal
         isOpen={activeModal === "add"}
         onClose={closeModal}
-        onSubmit={handleAddDegreeWrapper}
+        onSubmit={handleAddDegree}
         loading={saving}
       />
 

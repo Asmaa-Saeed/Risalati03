@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { X, Save, Loader2 } from "lucide-react";
-import { Degree, UpdateDegreeData, CreateDegreeData, DegreesService } from "@/lib/degrees";
+import { Degree, UpdateDegreeData, DegreesService } from "@/lib/degrees";
 import axios from "axios";
 
 const degreeSchema = z.object({
@@ -33,20 +33,37 @@ interface GeneralDegree {
 const EditDegreeModal: React.FC<EditDegreeModalProps> = ({ isOpen, onClose, onSubmit, degree, loading = false }) => {
   const [loadingDegrees, setLoadingDegrees] = useState(false);
   const [generalDegrees, setGeneralDegrees] = useState<GeneralDegree[]>([]);
-  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<{
+  type FormData = {
     id: number;
     name: string;
     description?: string;
     standardDurationYears?: number | null;
     departmentId: number;
     generalDegree?: string;
-  }>({
+  };
+
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     resolver: zodResolver(degreeSchema),
+    defaultValues: degree || {}
   });
 
   const departments = DegreesService.getDepartments();
 
-  
+  // Handle form submission
+  const onFormSubmit = async (data: FormData) => {
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      // Error handling is done in parent component
+    }
+  };
+
+  // Handle modal close
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
 
   // Fetch general degrees from the external API
   useEffect(() => {
@@ -160,26 +177,6 @@ const EditDegreeModal: React.FC<EditDegreeModalProps> = ({ isOpen, onClose, onSu
     }
   }, [degree, reset]);
 
-  const handleFormSubmit = async (data: {
-    id: number;
-    name: string;
-    description?: string;
-    standardDurationYears?: number | null;
-    departmentId: number;
-    generalDegree?: string;
-  }) => {
-    try {
-      await onSubmit(data);
-      onClose();
-    } catch (error) {
-      // Error handling is done in parent component
-    }
-  };
-
-  const handleClose = () => {
-    onClose();
-  };
-
   if (!isOpen || !degree) return null;
 
   return (
@@ -207,7 +204,7 @@ const EditDegreeModal: React.FC<EditDegreeModalProps> = ({ isOpen, onClose, onSu
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit(onFormSubmit)} className="p-6 space-y-6">
           <div className="grid grid-cols-1 gap-6">
             {/* Degree Name */}
             <div>

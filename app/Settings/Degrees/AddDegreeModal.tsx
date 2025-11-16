@@ -20,7 +20,7 @@ const degreeSchema = z.object({
 interface AddDegreeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: () => void;
+  onSubmit: (data: any) => void;
   loading?: boolean;
 }
 
@@ -29,7 +29,7 @@ interface GeneralDegree {
   value: string;
 }
 
-const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, loading = false }) => {
+const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, onSubmit, loading = false }) => {
   const [loadingDegrees, setLoadingDegrees] = useState(false);
   const [generalDegrees, setGeneralDegrees] = useState<GeneralDegree[]>([]);
   const departments = DegreesService.getDepartments();
@@ -112,7 +112,7 @@ const AddDegreeModal: React.FC<AddDegreeModalProps> = ({ isOpen, onClose, loadin
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
         </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 mt-6">
+        <form onSubmit={handleSubmit((data) => onSubmit(data))} className="space-y-6 mt-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">اسم الدرجة العلمية *</label>
             <input

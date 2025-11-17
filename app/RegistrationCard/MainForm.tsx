@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 const APIURL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -107,7 +108,7 @@ const MainForm = ({ setActivate }: MainFormProps) => {
       if (["png", "jpg", "jpeg"].includes(ext!)) {
         setForm((prev) => ({ ...prev, [name]: file }));
       } else {
-        alert("مسموح فقط بصور بصيغ PNG، JPG، JPEG");
+        toast.error("مسموح فقط بصور بصيغ PNG، JPG، JPEG");
         e.target.value = "";
       }
     }
@@ -418,22 +419,25 @@ const MainForm = ({ setActivate }: MainFormProps) => {
             {" "}
             <form onSubmit={handleSubmit} dir="rtl" className="space-y-9">
               {" "}
-              {/* نوع الطلب */}{" "}
+               {/* نوع الطلب */}{" "}
               <div className="flex items-center justify-center mb-6 bg-gray-50 p-4 rounded-lg">
                 {" "}
                 <label className="ml-4 text-gray-700">نوع الطلب:</label>{" "}
                 <select
                   name="requestTypeId"
-                  value={form.requestTypeId || kindOfRequests[0]?.id || ""} // أول اختيار إذا فاضي
+                  value={form.requestTypeId}
                   onChange={handleFormChange}
                   className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   required
                 >
+                  {" "}
+                  <option value="">اختر نوع الطلب</option>{" "}
                   {kindOfRequests.map((request) => (
                     <option key={request.id} value={request.id}>
-                      {request.value}
+                      {" "}
+                      {request.value}{" "}
                     </option>
-                  ))}
+                  ))}{" "}
                 </select>{" "}
               </div>{" "}
               {/* Personal Information Section */}{" "}

@@ -849,11 +849,10 @@ const MainForm = ({ setActivate }: MainFormProps) => {
                 {" "}
                 <button
                   type="button"
-                  onClick={() => setActivate(null as FormType)}
+                  onClick={() => router.back()}
                   className="border-teal-600 border font-bold cursor-pointer text-teal-600 px-6 py-2 rounded-full hover:bg-teal-600 hover:text-white transition-colors w-full sm:w-auto text-center"
                 >
-                  {" "}
-                  رجوع{" "}
+                  رجوع
                 </button>{" "}
                 <button
                   type="submit"

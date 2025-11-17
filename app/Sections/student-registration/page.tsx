@@ -574,37 +574,49 @@ export default function StudentRegistrationPage() {
                   </select>
                 </div>
 
-                {/* gender */}
-              <select
-  value={gender}
-  onChange={handleGenderChange}
-  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
-  required
->
-  <option value="">اختر النوع</option>
-  <option value="ذكر">ذكر</option>
-  <option value="أنثى">أنثى</option>
-</select>
+{/* النوع */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    النوع
+  </label>
+  <select
+    value={gender}
+    onChange={handleGenderChange}
+    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+    required
+  >
+    <option value="">اختر النوع</option>
+    <option value="ذكر">ذكر</option>
+    <option value="أنثى">أنثى</option>
+  </select>
+</div>
 
-               {/* الخدمة العسكرية */}
-                 <select
-  name="militaryService"
-  value={formData.militaryService}
-  onChange={handleChange}
-  required={gender === "ذكر"}
-  disabled={gender === "أنثى"}
-  className={`
-    w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none
-    focus:ring-2 focus:ring-custom-teal focus:border-transparent
-    ${gender === "أنثى" ? "bg-gray-100 cursor-not-allowed" : " cursor-pointer"}
-  `}
->
-  {militaryServices.map((m: any) => (
-    <option key={m.id} value={m.id}>
-      {m.value}
+{/* الخدمة العسكرية */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    الخدمة العسكرية
+  </label>
+  <select
+    name="militaryService"
+    value={formData.militaryService}
+    onChange={handleChange}
+    required={gender === "ذكر"}
+    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+  >
+    <option value="">
+      {gender === "أنثى"
+        ? "اختر غير محدد إذا أنثى"
+        : "اختر الخدمة العسكرية"}
     </option>
-  ))}
-</select>
+    {militaryServices.map((m: any) => (
+      <option key={m.id} value={m.id}>
+        {m.value}
+      </option>
+    ))}
+  </select>
+</div>
+
+
 
 
                 

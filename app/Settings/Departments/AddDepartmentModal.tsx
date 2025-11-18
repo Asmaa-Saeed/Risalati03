@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import toast from "react-hot-toast";
 import { X, Save, Loader2 } from "lucide-react";
 import { DepartmentsService, Program, CreateDepartmentData } from "@/lib/departments";
 
 const departmentSchema = z.object({
   name: z.string().min(1, "اسم القسم مطلوب"),
   code: z.string().min(1, "كود القسم مطلوب"),
-  description: z.string().min(1, "وصف القسم مطلوب"),
+  description: z.string(),
   programId: z.string().min(1, "البرنامج مطلوب"),
   programName: z.string().min(1, "اسم البرنامج مطلوب"),
 });
@@ -20,7 +21,7 @@ type DepartmentFormData = z.infer<typeof departmentSchema>;
 interface AddDepartmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateDepartmentData) => Promise<void>;
+  onSubmit: (data: CreateDepartmentData) => Promise<{ success: boolean; message?: string }>;
   loading?: boolean;
 }
 
@@ -86,67 +87,52 @@ export default function AddDepartmentModal({ isOpen, onClose, onSubmit, loading 
     }
   }, [watchedProgramId, programs, setValue]);
 
-  const handleFormSubmit = async (formData: DepartmentFormData) => {
-    try {
-      console.log("📝 Form data received:", formData);
-      
-      // Get and validate the code field
-      const codeValue = formData.code?.trim() || '';
-      console.log("🔍 Code field value:", codeValue);
-      
-      // Validate form
-      if (!codeValue || !formData.name || !formData.programId) {
-        const missingFields = [];
-        if (!formData.name) missingFields.push('name');
-        if (!codeValue) {
-          console.error("❌ Code is missing or empty after trimming");
-          missingFields.push('code');
-        }
-        if (!formData.programId) missingFields.push('programId');
-        
-        console.error("❌ Missing required fields:", missingFields);
-        return;
-      }
-      
-      if (codeValue.length < 2) {
-        console.error("❌ Code must be at least 2 characters long");
-        return;
-      }
+const handleFormSubmit = async (formData: DepartmentFormData) => {
+  try {
+    // ... validation trimming اللي عندك بالفعل ...
+    const selectedProgram = programs.find(p => p.id.toString() === formData.programId);
 
-      // Get the selected program
-      const selectedProgram = programs.find(p => p.id.toString() === formData.programId);
-      
-    // In AddDepartmentModal.tsx, update the departmentData object to include all required fields:
-const departmentData: CreateDepartmentData = {
-  departmentId: `DEPT-${Date.now()}`,
-  name: formData.name.trim(),
-  code: codeValue,
-  description: formData.description.trim(),
-  programId: formData.programId,
-  programName: selectedProgram?.value || '',
-  collegeId: '1',
-  collegeName: 'كلية الحاسبات والمعلومات',
-  headOfDepartment: '',
-  headOfDepartmentId: '',
-  // Add the missing required fields with default values
-  totalStudents: 0,
-  totalCourses: 0,
-  status: 'active',
-  establishedYear: new Date().getFullYear(),
-  phone: '',
-  email: '',
-  room: ''
-};
+    const departmentData: CreateDepartmentData = {
+      departmentId: `DEPT-${Date.now()}`,
+      name: formData.name.trim(),
+      code: formData.code.trim(),
+      description: formData.description.trim(),
+      programId: formData.programId,
+      programName: selectedProgram?.value || '',
+      collegeId: '1',
+      collegeName: 'كلية الحاسبات والمعلومات',
+      headOfDepartment: '',
+      headOfDepartmentId: '',
+      totalStudents: 0,
+      totalCourses: 0,
+      status: 'active',
+      establishedYear: new Date().getFullYear(),
+      phone: '',
+      email: '',
+      room: ''
+    };
 
-      console.log("🚀 Submitting department data:", departmentData);
-      await onSubmit(departmentData);
-      reset();
-      onClose();
-    } catch (error) {
-      console.error("❌ Error submitting form:", error);
-      // Error handling is done in parent component
+    // ننتظر نتيجة onSubmit من ال Parent
+    const result = await onSubmit(departmentData);
+
+    if (!result?.success) {
+      // لو الباك رجع false -> نعرض الرسالة ونترك المودال مفتوح
+      toast.error(result?.message || "حدث خطأ أثناء الحفظ");
+      return; // المودال لا يغلق
     }
-  };
+
+    // نجاح -> نعرض نجاح ونقفل المودال
+    toast.success(result.message || "تم إضافة القسم بنجاح");
+    reset();
+    onClose();
+
+  } catch (error: any) {
+    console.error("❌ Error submitting form:", error);
+    const errMsg = error?.message || "حدث خطأ أثناء الإرسال";
+    toast.error(errMsg);
+    // لا نقفل المودال هنا أيضاً
+  }
+};
 
   const handleClose = () => {
     reset();
@@ -207,10 +193,6 @@ const departmentData: CreateDepartmentData = {
               <input
                 {...register("code", { 
                   required: "كود القسم مطلوب",
-                  minLength: {
-                    value: 2,
-                    message: "يجب أن يكون كود القسم حرفين على الأقل"
-                  }
                 })}
                 type="text"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${

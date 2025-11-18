@@ -210,7 +210,7 @@ export const createDepartment = async (
     programId: number;
   },
   token: string
-): Promise<{ success: boolean; data?: any; message?: string }> => {
+): Promise<{ success: boolean; data?: any; message?: string; errors?: any }> => {
   try {
     if (!API_URL) {
       throw new Error("❌ Environment variable NEXT_PUBLIC_API_URL is not set");
@@ -220,69 +220,42 @@ export const createDepartment = async (
       return { success: false, message: "الرجاء تسجيل الدخول أولاً" };
     }
 
-    console.log("🔍 Raw department data received:", departmentData);
-    
-    // Debug: Log the raw code value and its type
-    console.log("🔍 Raw code value:", departmentData.code);
-    console.log("🔍 Raw code type:", typeof departmentData.code);
-    
-    // Ensure we have all required fields with proper trimming
-    const code = departmentData.code ? String(departmentData.code).trim() : '';
-    const name = (departmentData.name || '').trim();
-    const description = (departmentData.description || '').trim();
-    const programId = departmentData.programId || '';
-    
-    console.log("🔍 Processed code value:", code);
-    console.log("🔍 Processed code length:", code.length);
-    
-    // Validate required fields first
-    if (!code || code.length < 2) {
-      console.error("❌ Invalid code value after processing:", {
-        original: departmentData.code,
-        processed: code,
-        length: code.length,
-        type: typeof code,
-        isFalsy: !code,
-        isTooShort: code.length < 2
-      });
-      throw new Error("كود القسم مطلوب ويجب أن يكون حرفين على الأقل");
-    }
-    
-    // Prepare the request body with correct field names (lowercase)
-    const requestBody = {
-      code: code,
-      name: name,
-      description: description,
-      programId: programId
-    };
-    
-    console.log("🔍 Sending to API:", requestBody);
-    
-    console.log("🔹 Sending data to API:", requestBody);
-    
     const response = await fetch(`${API_URL}/Departments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(departmentData),
     });
 
-    console.log("🔹 Create Response status:", response.status);
     const text = await response.text();
+    console.log("🔹 Create Response status:", response.status);
     console.log("🔹 Create Response body:", text);
 
     let data: any;
+
     try {
       data = JSON.parse(text);
     } catch {
       data = text;
     }
 
+    // 🔴 التقاط أخطاء الـ validation بشكل مفصل
     if (!response.ok) {
-      // ✅ نستخرج رسالة الخطأ من الـ API
-      return { success: false, message: data?.message || "فشل في إضافة القسم" };
+      let errorMessage = data?.message || "فشل في إضافة القسم";
+
+      // لو الـ API رجع errors
+      if (data?.errors) {
+        // نجمع كل الأخطاء في رسالة واحدة مفصولة بفواصل
+        errorMessage = Object.values(data.errors).flat().join("، ");
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+        errors: data?.errors || null,
+      };
     }
 
     if (data?.succeeded) {
@@ -290,11 +263,13 @@ export const createDepartment = async (
     }
 
     return { success: false, message: data?.message || "فشل في إضافة القسم" };
+
   } catch (error) {
     console.error("❌ Error creating department:", error);
     return { success: false, message: (error as Error).message };
   }
 };
+
 
 // 🟡 Update Department
 export const updateDepartment = async (
@@ -306,7 +281,7 @@ export const updateDepartment = async (
     programId: number;
   },
   token: string
-): Promise<{ success: boolean; data?: any; message?: string }> => {
+): Promise<{ success: boolean; data?: any; message?: string; errors?: Record<string, string[]> }> => {
   try {
     if (!API_URL) {
       throw new Error("❌ Environment variable NEXT_PUBLIC_API_URL is not set");
@@ -317,40 +292,21 @@ export const updateDepartment = async (
     }
 
     console.log("🔍 Raw department data received for update:", departmentData);
-    
-    // Process and validate the data similar to create
+
+    // معالجة القيم
     const code = departmentData.code ? String(departmentData.code).trim() : '';
     const name = (departmentData.name || '').trim();
     const description = (departmentData.description || '').trim();
     const programId = departmentData.programId || '';
+
     
-    console.log("🔍 Processed update code value:", code);
-    console.log("🔍 Processed update code length:", code.length);
-    
-    // Validate required fields
-    if (!code || code.length < 2) {
-      console.error("❌ Invalid code value in update:", {
-        original: departmentData.code,
-        processed: code,
-        length: code.length,
-        type: typeof code,
-        isFalsy: !code,
-        isTooShort: code.length < 2
-      });
-      throw new Error("كود القسم مطلوب ويجب أن يكون حرفين على الأقل");
-    }
-    
-    // Prepare the request body with proper field names and validation
-    const requestBody = {
-      id: id,
-      code: code,
-      name: name,
-      description: description,
-      programId: programId
-    };
-    
+    // if (!code || code.length < 2) {
+    //   throw new Error("كود القسم مطلوب ويجب أن يكون حرفين على الأقل");
+    // }
+
+    const requestBody = { id, code, name, description, programId };
     console.log("🔍 Sending update to API:", requestBody);
-    
+
     const response = await fetch(`${API_URL}/Departments/${id}`, {
       method: "PUT",
       headers: {
@@ -361,7 +317,7 @@ export const updateDepartment = async (
     });
 
     console.log("🔹 Update Response status:", response.status);
-   
+
     const text = await response.text();
     console.log("🔹 Update Response body:", text);
 
@@ -372,21 +328,35 @@ export const updateDepartment = async (
       data = text;
     }
 
+    // ❌ معالجة الأخطاء (400 / validation)
     if (!response.ok) {
-      // ✅ نستخرج رسالة الخطأ من الـ API
-      return { success: false, message: data?.message || "فشل في تحديث القسم" };
+      let errorMessage = "فشل في تحديث القسم";
+
+      if (data?.errors && typeof data.errors === "object") {
+        const firstKey = Object.keys(data.errors)[0];
+        if (firstKey && Array.isArray(data.errors[firstKey])) {
+          errorMessage = data.errors[firstKey][0]; // أول رسالة validation
+        }
+      } else if (data?.message) {
+        errorMessage = data.message;
+      }
+
+      return { success: false, message: errorMessage };
     }
 
+    // ✅ نجاح التحديث
     if (data?.succeeded) {
-      return { success: true, data: data.data, message: data.message };
+      return { success: true, data: data.data, message: data.message || "تم تحديث القسم بنجاح" };
     }
 
     return { success: false, message: data?.message || "فشل في تحديث القسم" };
-  } catch (error) {
+
+  } catch (error: any) {
     console.error("❌ Error updating department:", error);
-    return { success: false, message: (error as Error).message };
+    return { success: false, message: error.message || "حدث خطأ أثناء تحديث القسم" };
   }
 };
+
 
 // 🗑️ Delete Department
 export const deleteDepartment = async (

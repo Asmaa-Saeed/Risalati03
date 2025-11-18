@@ -6,14 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { X, Save, Loader2 } from "lucide-react";
 import { UpdateTrackData, LookupItem } from "@/lib/tracks";
+import toast from "react-hot-toast"; // لو بتستخدمي react-hot-toast
 
 const trackSchema = z.object({
-  name: z
-    .string()
-    .min(1, "اسم المسار مطلوب"),
-  code: z
-    .string()
-    .min(1, "كود المسار مطلوب"),
+  name: z.string().min(1, "اسم المسار مطلوب"),
+  code: z.string(),
   degreeId: z.number().min(1, "الدرجة العلمية مطلوبة"),
   departmentId: z.number().min(1, "القسم مطلوب"),
 });
@@ -23,7 +20,7 @@ type TrackFormData = z.infer<typeof trackSchema>;
 interface EditTrackModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: UpdateTrackData) => Promise<void>;
+  onSubmit: (data: UpdateTrackData) => Promise<{ success: boolean; message?: string }>;
   track?: any | null;
   loading?: boolean;
 }
@@ -41,30 +38,34 @@ export default function EditTrackModal({
   const [loadingDegrees, setLoadingDegrees] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-    reset,
-    watch,
-  } = useForm<TrackFormData>({
-    resolver: zodResolver(trackSchema),
-    defaultValues: {
-      name: track?.name || "",
-      code: track?.code || "",
-      degreeId: track?.degreeId || 0,
-      departmentId: track?.degree?.departmentId || 0,
-    },
-  });
+  const { register, handleSubmit, setValue, formState: { errors }, reset, watch } =
+    useForm<TrackFormData>({
+      resolver: zodResolver(trackSchema),
+      defaultValues: {
+        name: track?.name || "",
+        code: track?.code || "",
+        degreeId: track?.degreeId || 0,
+        departmentId: track?.degree?.departmentId || 0,
+      },
+    });
 
   const watchDepartmentId = watch("departmentId");
 
+  // تحميل البيانات عند فتح المودال
   useEffect(() => {
     if (isOpen) {
+      setIsVisible(true);
       loadDepartments();
+      if (track) {
+        reset({
+          name: track.name,
+          code: track.code,
+          degreeId: track.degreeId || 0,
+          departmentId: track.degree?.departmentId || 0,
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, track, reset]);
 
   useEffect(() => {
     if (watchDepartmentId && watchDepartmentId > 0) {
@@ -73,17 +74,6 @@ export default function EditTrackModal({
       setDegrees([]);
     }
   }, [watchDepartmentId]);
-
-  useEffect(() => {
-    if (track) {
-      reset({
-        name: track.name,
-        code: track.code,
-        degreeId: track.degreeId || 0,
-        departmentId: track.degree?.departmentId || 0,
-      });
-    }
-  }, [track, reset]);
 
   const loadDepartments = async () => {
     setLoadingDepartments(true);
@@ -123,27 +113,8 @@ export default function EditTrackModal({
 
   const handleDepartmentChange = (deptId: number) => {
     setValue("degreeId", 0);
-    if (deptId) {
-      loadDegreesByDepartment(deptId);
-    } else {
-      setDegrees([]);
-    }
-  };
-
-  const handleFormSubmit = async (data: TrackFormData) => {
-    if (!track) return;
-    try {
-      await onSubmit({
-        id: track.id,
-        name: data.name,
-        code: data.code,
-        degreeId: data.degreeId,
-        departmentId: data.departmentId,
-      });
-      onClose();
-    } catch (error) {
-      console.error("❌ Error saving track:", error);
-    }
+    if (deptId) loadDegreesByDepartment(deptId);
+    else setDegrees([]);
   };
 
   const handleClose = () => {
@@ -151,9 +122,36 @@ export default function EditTrackModal({
     onClose();
   };
 
+  // 🔹 تعديل الحفظ: المودال لا يغلق إلا عند النجاح
+  const handleFormSubmit = async (data: TrackFormData) => {
+    if (!track) return;
+    try {
+      const result = await onSubmit({
+        id: track.id,
+        name: data.name,
+        code: data.code,
+        degreeId: data.degreeId,
+        departmentId: data.departmentId,
+      });
+
+      if (result.success) {
+        toast.success(result.message || "تم حفظ التعديلات بنجاح!");
+        reset();
+        onClose();
+      } else {
+        toast.error(result.message || "فشل في حفظ التعديلات.");
+        // المودال يظل مفتوح
+      }
+    } catch (error) {
+      console.error("❌ Error saving track:", error);
+      // toast.error("حدث خطأ أثناء الحفظ. حاول مرة أخرى.");
+      // يبقى المودال مفتوح
+    }
+  };
+
+  // animation للظهور والاختفاء
   useEffect(() => {
-    if (isOpen) setIsVisible(true);
-    else {
+    if (!isOpen) {
       const timer = setTimeout(() => setIsVisible(false), 300);
       return () => clearTimeout(timer);
     }
@@ -199,9 +197,7 @@ export default function EditTrackModal({
                 errors.name ? "border-red-500" : "border-gray-300"
               }`}
             />
-            {errors.name && (
-              <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
           </div>
 
           {/* الكود */}
@@ -217,11 +213,8 @@ export default function EditTrackModal({
                 errors.code ? "border-red-500" : "border-gray-300"
               }`}
             />
-            {errors.code && (
-              <p className="text-sm text-red-600 mt-1">{errors.code.message}</p>
-            )}
+            {errors.code && <p className="text-sm text-red-600 mt-1">{errors.code.message}</p>}
           </div>
-          
 
           {/* القسم */}
           <div>
@@ -248,9 +241,7 @@ export default function EditTrackModal({
                 </option>
               ))}
             </select>
-            {errors.departmentId && (
-              <p className="text-sm text-red-600 mt-1">{errors.departmentId.message}</p>
-            )}
+            {errors.departmentId && <p className="text-sm text-red-600 mt-1">{errors.departmentId.message}</p>}
           </div>
 
           {/* الدرجة العلمية */}
@@ -273,9 +264,7 @@ export default function EditTrackModal({
                 </option>
               ))}
             </select>
-            {errors.degreeId && (
-              <p className="text-sm text-red-600 mt-1">{errors.degreeId.message}</p>
-            )}
+            {errors.degreeId && <p className="text-sm text-red-600 mt-1">{errors.degreeId.message}</p>}
           </div>
 
           {/* الأزرار */}
@@ -292,11 +281,7 @@ export default function EditTrackModal({
               disabled={loading || loadingDegrees || loadingDepartments}
               className="flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
-              {loading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Save size={18} />
-              )}
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               {loading ? "جاري الحفظ..." : "حفظ التعديلات"}
             </button>
           </div>

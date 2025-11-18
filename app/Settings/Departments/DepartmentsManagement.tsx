@@ -89,36 +89,61 @@ export default function DepartmentsManagement() {
     return program ? program.value : "غير محدد";
   };
 
-  const handleAddDepartment = async (departmentData: CreateDepartmentData) => {
-    setSaving(true);
-    try {
-      const response = await DepartmentsService.createDepartment(departmentData);
-      if (response.success && response.data) {
-        await loadDepartments();
-        setCurrentPage(1);
-        
-        // ✅ نعرض رسالة النجاح من الـ API
-        toast.success(response.message || "تم إضافة القسم بنجاح");
-        closeModal(); // نقفل المودال بعد النجاح
-      } else {
-        // ✅ نعرض رسالة الخطأ من الـ API
-        toast.error(response.message || "حدث خطأ في إضافة القسم");
+const handleAddDepartment = async (departmentData: CreateDepartmentData) => {
+  setSaving(true);
+
+  try {
+    const response = await DepartmentsService.createDepartment(departmentData);
+
+    if (!response.success) {
+      let errorMessage = response.message || 'حدث خطأ غير معروف';
+
+      if (response.errors) {
+        const firstKey = Object.keys(response.errors)[0];
+        if (firstKey && response.errors[firstKey]?.[0]) {
+          errorMessage = response.errors[firstKey][0];
+        }
       }
-    } catch (error) {
-      console.error("❌ Error adding department:", error);
-      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في إضافة القسم";
-      toast.error(errorMessage);
-    } finally {
-      setSaving(false);
+
+      return {
+        success: false,
+        message: errorMessage
+      };
     }
-  };
+
+
+    await loadDepartments();
+    setCurrentPage(1);
+
+    return {
+      success: true,
+      message: response.message || "تم إضافة القسم بنجاح"
+    };
+
+  } catch (error: any) {
+    console.error(error);
+
+    return {
+      success: false,
+      message: error.message || "حدث خطأ"
+    };
+
+  } finally {
+    setSaving(false);
+  }
+};
+
+
 
 const handleEditDepartment = async (data: UpdateDepartmentData) => {
-  if (!data?.id || !selectedDepartment) return;
+  if (!data?.id || !selectedDepartment) {
+    return { success: false, message: 'بيانات القسم غير صالحة' };
+  }
 
   setSaving(true);
+
   try {
-    // ✅ ندمج البيانات من المودال مع selectedDepartment علشان نمرر كل البيانات
+    // Merge modal data with selectedDepartment
     const completeData: UpdateDepartmentData = {
       ...selectedDepartment,
       ...data,
@@ -126,26 +151,57 @@ const handleEditDepartment = async (data: UpdateDepartmentData) => {
 
     const response = await DepartmentsService.updateDepartment(completeData);
 
-    if (response.success) {
-      // ✅ نعيد تحميل الجدول من السيرفر
-      await loadDepartments();
-      setCurrentPage(1);
-
-      // ✅ نعرض رسالة النجاح من الـ API
-      toast.success(response.message || "تم تحديث القسم بنجاح");
-      closeModal(); // نقفل المودال بعد النجاح
-    } else {
-      // ✅ نعرض رسالة الخطأ من الـ API
-      toast.error(response.message || "فشل في تحديث القسم");
+    // Handle undefined or invalid response
+    if (!response || typeof response.success === "undefined") {
+      const errorMessage = "فشل الاتصال بالخادم";
+      // toast.error(errorMessage);
+      return { success: false, message: errorMessage };
     }
-  } catch (error) {
+
+    // Handle error response
+    if (!response.success) {
+      let errorMessage = response.message || "حدث خطأ أثناء تحديث القسم";
+
+      // Extract first error from errors object if available
+      if (response.errors && typeof response.errors === "object") {
+        const firstKey = Object.keys(response.errors)[0];
+        if (firstKey && Array.isArray(response.errors[firstKey])) {
+          errorMessage = response.errors[firstKey][0];
+        }
+      }
+
+      // toast.error(errorMessage);
+      return { 
+        success: false, 
+        message: errorMessage,
+        errors: response.errors ? Object.values(response.errors).flat() : undefined
+      };
+    }
+
+    // Handle success
+    await loadDepartments();
+    setCurrentPage(1);
+
+    const successMessage = response.message || "تم تحديث القسم بنجاح";
+    // toas
+    // t.success(successMessage);
+    closeModal();
+    
+    return { success: true, message: successMessage };
+  } catch (error: any) {
     console.error("❌ Error updating department:", error);
-    const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث القسم";
-    toast.error(errorMessage);
+    const errorMessage = error.message || "حدث خطأ أثناء تحديث القسم";
+    // toast.error(errorMessage);
+    return { 
+      success: false, 
+      message: errorMessage,
+      errors: [errorMessage]
+    };
   } finally {
     setSaving(false);
   }
 };
+
 
 const handleDeleteDepartment = async () => {
   if (!selectedDepartment) return;

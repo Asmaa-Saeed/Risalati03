@@ -216,7 +216,12 @@ export class DepartmentsService {
     }
   }
 
-  static async createDepartment(departmentData: CreateDepartmentData): Promise<{ success: boolean; data: Department | null; message?: string }> {
+  static async createDepartment(departmentData: CreateDepartmentData): Promise<{ 
+    success: boolean; 
+    data: Department | null; 
+    message?: string; 
+    errors?: Record<string, string[]>;
+  }> {
     await this.delay();
 
     try {
@@ -279,6 +284,7 @@ export class DepartmentsService {
         success: false,
         data: null,
         message: response.message || 'حدث خطأ في إضافة القسم',
+        errors: response.errors
       };
     } catch (error) {
       return {
@@ -289,7 +295,7 @@ export class DepartmentsService {
     }
   }
 
-  static async updateDepartment(departmentData: UpdateDepartmentData): Promise<{ success: boolean; data: Department | null; message?: string }> {
+  static async updateDepartment(departmentData: UpdateDepartmentData): Promise<{ success: boolean; data: Department | null; message?: string; errors?: Record<string, string[]> }> {
     await this.delay();
 
     try {

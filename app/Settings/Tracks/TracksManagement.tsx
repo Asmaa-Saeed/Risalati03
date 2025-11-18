@@ -73,7 +73,7 @@ export default function TracksManagement() {
     }
   };
 
-  const handleEditTrack = async (data: UpdateTrackData) => {
+  const handleEditTrack = async (data: UpdateTrackData): Promise<{ success: boolean; message?: string; errors?: string[] }> => {
     try {
       setSaving(true);
 
@@ -82,16 +82,26 @@ export default function TracksManagement() {
       if (response.succeeded) {
         // Reload tracks from API to get updated department names
         await loadTracks();
-
         closeModal();
-        toast.success("تم تحديث المسار بنجاح");
+        
+        const successMessage = response.message || "تم تحديث المسار بنجاح";
+        return { success: true, message: successMessage };
       } else {
-        toast.error(response.message || "فشل في تحديث المسار");
+        const errorMessage = response.message || "فشل في تحديث المسار";
+        return { 
+          success: false, 
+          message: errorMessage,
+          errors: response.errors ? Object.values(response.errors).flat() : undefined
+        };
       }
     } catch (error) {
-      console.error(" Error updating track:", error);
+      console.error("Error updating track:", error);
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث المسار";
-      toast.error(errorMessage);
+      return { 
+        success: false, 
+        message: errorMessage,
+        errors: [errorMessage]
+      };
     } finally {
       setSaving(false);
     }

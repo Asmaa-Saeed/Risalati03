@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { X, Save, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   DepartmentsService,
   Program,
@@ -15,7 +16,7 @@ import {
 // ✅ Validation Schema
 const departmentSchema = z.object({
   name: z.string().min(1, "اسم القسم مطلوب"),
-  code: z.string().min(1, "كود القسم مطلوب"),
+  code: z.string(),
   description: z.string(),
   programId: z.string().min(1, "البرنامج مطلوب"),
 });
@@ -25,7 +26,7 @@ type DepartmentFormData = z.infer<typeof departmentSchema>;
 interface EditDepartmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: UpdateDepartmentData) => Promise<void>;
+  onSubmit: (data: UpdateDepartmentData) => Promise<{ success: boolean; message?: string; errors?: string[] }>;
   department: Department | null;
   loading?: boolean;
 }
@@ -77,7 +78,6 @@ export default function EditDepartmentModal({
     handleSubmit,
     formState: { errors },
     reset,
-    setValue,
   } = useForm<DepartmentFormData>({
     resolver: zodResolver(departmentSchema),
     defaultValues: {
@@ -105,17 +105,14 @@ export default function EditDepartmentModal({
     if (!department) return;
 
     try {
-      // Ensure code is at least 2 characters long after trimming
       const trimmedCode = data.code.trim();
       if (trimmedCode.length < 2) {
-        console.error("Code must be at least 2 characters long");
+        toast.error("كود القسم يجب أن يكون حرفين على الأقل");
         return;
       }
 
-      // Find the selected program
       const selectedProgram = programs.find(p => p.id === Number(data.programId));
-      
-      // Create the update data with all required fields
+
       const updateData: UpdateDepartmentData = {
         id: department.id,
         name: data.name.trim(),
@@ -123,7 +120,6 @@ export default function EditDepartmentModal({
         description: data.description.trim(),
         programId: data.programId,
         programName: selectedProgram?.value || '',
-        // Include all required fields from the department object
         departmentId: department.departmentId,
         collegeId: department.collegeId || '1',
         collegeName: department.collegeName || 'كلية الحاسبات والمعلومات',
@@ -138,10 +134,24 @@ export default function EditDepartmentModal({
         room: department.room || ''
       };
 
-      // This will be handled by the parent component (DepartmentsManagement)
-      await onSubmit(updateData);
-    } catch (error) {
+      const result = await onSubmit(updateData);
+
+      if (result.success) {
+        toast.success(result.message || "تم تحديث القسم بنجاح");
+        onClose(); // يغلق المودال فقط عند النجاح
+      } else {
+        // لو في errors من الـ API
+        if (result.errors && result.errors.length > 0) {
+          toast.error(result.errors.join("، "));
+        } else {
+          toast.error(result.message || "حدث خطأ أثناء التحديث");
+        }
+        // المودال يظل مفتوح
+      }
+    } catch (error: any) {
       console.error("Error submitting form:", error);
+      // toast.error(error?.message || "حدث خطأ أثناء الإرسال");
+      // المودال يظل مفتوح
     }
   };
 
@@ -239,9 +249,7 @@ export default function EditDepartmentModal({
               ))}
             </select>
             {errors.programId && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.programId.message}
-              </p>
+              <p className="mt-1 text-sm text-red-600">{errors.programId.message}</p>
             )}
           </div>
 
@@ -259,9 +267,7 @@ export default function EditDepartmentModal({
               placeholder="وصف تفصيلي للقسم وأهدافه..."
             />
             {errors.description && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.description.message}
-              </p>
+              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
             )}
           </div>
 

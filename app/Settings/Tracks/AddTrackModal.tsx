@@ -8,8 +8,8 @@ import { X, Save, Loader2 } from "lucide-react";
 import { CreateTrackData, LookupItem } from "@/lib/tracks";
 
 const trackSchema = z.object({
-  name: z.string().min(1, "اسم المسار مطلوب").min(2, "اسم المسار يجب أن يكون حرفين على الأقل"),
-  code: z.string().min(1, "كود المسار مطلوب").min(2, "كود المسار يجب أن يكون حرفين على الأقل"),
+  name: z.string().min(1, "اسم المسار مطلوب"),
+  code: z.string().min(1, "كود المسار مطلوب"),
   degreeId: z.number().min(1, "الدرجة العلمية مطلوبة"),
   departmentId: z.number().min(1, "القسم مطلوب"),
 });
